@@ -38,40 +38,40 @@ else( )
      message( FATAL "Compiler not supported" )
 endif( )
 
+#
+# set sources
+#
+set( PROJECT_INCLUDES
+     "${CMAKE_CURRENT_SOURCE_DIR}/voronoi.hpp" )
+set( PROJECT_SOURCES
+     "${CMAKE_CURRENT_SOURCE_DIR}/voronoi.cpp" )
+
+#
 # Build Project
 #
 find_library( OPENGL_LIBRARY OpenGL )
 find_library( GLFW3_LIBRARY GLFW3 )
-if( OPENGL_LIBRARY )
-	message( STATUS "OpenGL found" )
-endif( )
-if( GLFW3_LIBRARY )
-	message( STATUS "GLFW3 found" )
-endif( )
-
-
-set( PROJECT_INCLUDES
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/voronoi.hpp" )
-set( PROJECT_SOURCES
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/voronoi.cpp" )
 
 add_executable( simple
 	${PROJECT_SOURCES}
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/samples/simple.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/samples/simple.cpp"
 	${PROJECT_INCLUDES} )
 set_target_properties( simple PROPERTIES COMPILE_FLAGS
 	${LOCAL_CPP_COMPILE_FLAGS} )
 set_target_properties( simple PROPERTIES LINK_FLAGS
 	${LOCAL_CPP_LINK_FLAGS} )
 
-add_executable( glgraph
-	${PROJECT_SOURCES}
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/samples/glgraph.cpp"
-	${PROJECT_INCLUDES} )
-set_target_properties( glgraph PROPERTIES COMPILE_FLAGS
-	${LOCAL_CPP_COMPILE_FLAGS} )
-set_target_properties( glgraph PROPERTIES LINK_FLAGS
-	${LOCAL_CPP_LINK_FLAGS} )
-target_link_libraries( glgraph 
-	${OPENGL_LIBRARY} ${GLFW3_LIBRARY} )
-
+if( OPENGL_LIBRARY AND GLFW3_LIBRARY )
+	add_executable( glgraph
+		${PROJECT_SOURCES}
+		"${CMAKE_CURRENT_SOURCE_DIR}/samples/glgraph.cpp"
+		${PROJECT_INCLUDES} )
+	set_target_properties( glgraph PROPERTIES COMPILE_FLAGS
+		${LOCAL_CPP_COMPILE_FLAGS} )
+	set_target_properties( glgraph PROPERTIES LINK_FLAGS
+		${LOCAL_CPP_LINK_FLAGS} )
+	target_link_libraries( glgraph 
+		${OPENGL_LIBRARY} ${GLFW3_LIBRARY} )
+else( )
+	message( WARNING "OpenGL and GLFW3 required to build sample" )
+endif( )

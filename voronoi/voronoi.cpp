@@ -116,29 +116,29 @@ namespace cinekine
 
 	void Fortune::attachCircleEvent(BeachArc* arc)
 	{
-		BeachArc* leftArc = arc->previous();
-		BeachArc* rightArc = arc->next();
-		if (!leftArc || !rightArc)
-			return;
-		// If site of left beachsection is same as site of
-    	// right beachsection, there can't be convergence
-		if (leftArc->site == rightArc->site)
-			return;
+  		BeachArc* leftArc = arc->previous();
+  		BeachArc* rightArc = arc->next();
+  		if (!leftArc || !rightArc)
+  			return;
+  		// If site of left beachsection is same as site of
+      	// right beachsection, there can't be convergence
+  		if (leftArc->site == rightArc->site)
+  			return;
 
-		const Site& leftSite = _sites[leftArc->site];
-		const Site& centerSite = _sites[arc->site];
-		const Site& rightSite = _sites[rightArc->site];
+  		const Site& leftSite = _sites[leftArc->site];
+  		const Site& centerSite = _sites[arc->site];
+  		const Site& rightSite = _sites[rightArc->site];
 
-		// Find the circumscribed circle for the three sites associated
-	    // with the beachsection triplet.
-	    // rhill 2011-05-26: It is more efficient to calculate in-place
-	    // rather than getting the resulting circumscribed circle from an
-	    // object returned by calling Voronoi.circumcircle()
-	    // http://mathforum.org/library/drmath/view/55002.html
-	    // Except that I bring the origin at cSite to simplify calculations.
-	    // The bottom-most part of the circumcircle is our Fortune 'circle
-	    // event', and its center is a vertex potentially part of the final
-	    // Voronoi diagram.
+    	// Find the circumscribed circle for the three sites associated
+      // with the beachsection triplet.
+      // rhill 2011-05-26: It is more efficient to calculate in-place
+      // rather than getting the resulting circumscribed circle from an
+      // object returned by calling Voronoi.circumcircle()
+      // http://mathforum.org/library/drmath/view/55002.html
+      // Except that I bring the origin at cSite to simplify calculations.
+      // The bottom-most part of the circumcircle is our Fortune 'circle
+      // event', and its center is a vertex potentially part of the final
+      // Voronoi diagram.
 	    float bx = centerSite.x, by = centerSite.y;
 	    float ax = leftSite.x - bx, ay = leftSite.y - by;
 	    float cx = rightSite.x - bx, cy = rightSite.y - by;
@@ -147,8 +147,8 @@ namespace cinekine
 	    // collapse, hence it can't end up as a vertex (we reuse 'd' here, which
 	    // sign is reverse of the orientation, hence we reverse the test.
 	    // http://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
-	    // rhill 2011-05-21: Nasty finite precision error which caused circumcircle() to
-	    // return infinites: 1e-12 seems to fix the problem.
+	    // rhill 2011-05-21: Nasty finite precision error which caused 
+      // circumcircle() to return infinites: 1e-12 seems to fix the problem.
 	    float d = 2*(ax*cy - ay*cx);
 	    if (d >= -2e-9)
 	    	return;
@@ -290,12 +290,12 @@ namespace cinekine
 		_beachline.insert(leftArc, newArc);
 
 		// [null,null]
-        // least likely case: new beach section is the first beach section on the
-        // beachline.
-        // This case means:
-        //   no new transition appears
-        //   no collapsing beach section
-        //   new beachsection become root of the RB-tree
+    // least likely case: new beach section is the first beach section on the
+    // beachline.
+    // This case means:
+    //   no new transition appears
+    //   no collapsing beach section
+    //   new beachsection become root of the RB-tree
 		if (!leftArc && !rightArc)
 			return;
 

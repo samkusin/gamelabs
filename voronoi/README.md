@@ -9,6 +9,18 @@ The code uses C++11 conventions.  Where convenient, reference counting of object
 is used.  In most cases I've made an effort to minimize memory allocations, and to avoid using
 smart pointers.
 
+## Samples
+
+Note, at the moment these samples only work on OS X using Clang
+
+### glgraph
+
+Displays a graph via OpenGL (GLFW.)
+
+### simple
+
+A text based demonstration of the source, printing out cells, their edges, etc.
+
 ## Todos
 
 I've run a few tests locally and from an algorithmn standpoint, everything seems good.  But...
