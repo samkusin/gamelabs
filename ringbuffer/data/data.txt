@@ -1,0 +1,3 @@
+Tested integrity of the streaming ring buffer using this image with the sample application.  The application copies a file to another file using a streaming ring buffer.
+
+http://eoimages.gsfc.nasa.gov/images/imagerecords/42000/42805/terra_10th_first_light_map_lrg.jpg
