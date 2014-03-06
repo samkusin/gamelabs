@@ -32,6 +32,10 @@ https://github.com/gorhill/Javascript-Voronoi
 
 Implements a simple ring buffer that copies data from one stream to another using pthreads (not C++11 threads yet...)
 
+###JobQueue
+
+Implements a simple priority based job queue, and a sample that demonstrates a simulation posting and terminating jobs during its run.
+
 ## License
 
 Unless otherwise specified per project LICENSE.md, the code here is licensed under the MIT license.
