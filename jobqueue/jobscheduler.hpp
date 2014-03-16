@@ -29,7 +29,7 @@
  */
 
 #ifndef CK_FRAMEWORK_JOBSCHEDULER_HPP
-#define CK_FRAMEWORK_JOBSCHECULER_HPP
+#define CK_FRAMEWORK_JOBSCHEDULER_HPP
 
 #include "job.hpp"
 #include <memory>
