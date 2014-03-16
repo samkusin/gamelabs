@@ -145,18 +145,16 @@ public:
         segment.x0 = xMinRange ? (rand() % xMinRange) : 0;
         segment.y0 = yMinRange ? (rand() % yMinRange) : 0;
         segment.x1 = segment.x0 + xSize;
-        segment.y1 = segment.y0 + ySize;
-
- printf("%d,%d,%d,%d\n", segment.x0, segment.y0, segment.x1, segment.y1);
-
-       
+        segment.y1 = segment.y0 + ySize;      
     }
    
     void onPaintSegment(cinekine::overview::TileBrush& brush,
                         const cinekine::overview::Room& room,
                         const cinekine::overview::Segment& segment)
     {
-
+        //  set our brush
+        brush.tileCategoryId = kTileCategory_Dungeon;
+        brush.tileClassId = kTileClass_Stone;
     }
 };
 
@@ -176,7 +174,7 @@ class Application
     std::unique_ptr<cinekine::overview::Map> _map;
     std::unique_ptr<cinekine::overview::Architect> _architect;
 
-    static const uint32_t kNumRooms = 4;
+    static const uint32_t kNumRooms = 12;
 
 public:
     Application(Graphics& graphics) :

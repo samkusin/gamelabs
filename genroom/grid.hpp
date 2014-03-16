@@ -108,21 +108,15 @@ public:
      */
     const_row_strip atRow(uint32_t row, uint32_t col, uint32_t length=UINT32_MAX) const;
     /**
-     * Copies a portion of this grid to another grid (the target.)  Clipping is
-     * supported if part of the source rectangle resides outside the target grid.
-     * @param targetGrid    Copies the source grid data from the specified 
-     *                      row,col,width and height to this grid.
-     * @param sourceRow     The row index to copy from.
-     * @param sourceCol     The column index to copy from.
-     * @param targetRow     The row index to copy to (the target.)
-     * @param targetCol     The column index to copy to (the target.)
-     * @param rowCount      Number of rows to copy.
-     * @param colCount      Number of columns to copy.   
-
-    void copyTo(Grid& targetGrid, uint32_t sourceRow, uint32_t sourceCol,
-            uint32_t targetRow, uint32_t targetCol,
-            uint32_t rowCount, uint32_t colCount);
+     * Fills a region within the grid with a specific value
+     * @param  value    The value to set
+     * @param  row      Row index in grid [0, rowCount()]
+     * @param  col      Column offset from start of row.
+     * @param  rows     Number of rows to fill
+     * @param  cols     Number of columns to fill
      */
+    void fillWithValue(Value value,
+                      uint32_t row, uint32_t col, uint32_t rows, uint32_t cols);
 
 private:
     Value* _data;
@@ -371,6 +365,21 @@ typename Grid<Value>::row_strip
         length = _colCount - col;
     uint32_t endCol = std::min(col+length, _colCount);
     return std::make_pair(rowStart+col, rowStart+endCol);
+}
+
+template<typename Value>
+void Grid<Value>::fillWithValue(Value value,
+                        uint32_t row, uint32_t col,
+                        uint32_t rows, uint32_t cols)
+{
+    for (uint32_t r = row; r < row + rows; ++r)
+    {
+        typename Grid<Value>::row_strip rowStrip = atRow(r, col, cols);
+        for (; rowStrip.first < rowStrip.second; ++rowStrip.first)
+        {
+            *rowStrip.first = value;
+        }
+    }
 }
 
     } /* overview */ 

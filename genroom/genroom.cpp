@@ -23,6 +23,7 @@
  */
 
 #include "genroom.hpp"
+#include "maptypes.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -64,14 +65,7 @@ namespace cinekine { namespace overview {
         for (uint32_t z = 0; z < bounds.zUnits; ++z)
         {
             cinekine::overview::Tilemap* tilemap = _map.tilemapAtZ(z);
-            for (uint32_t y = 0; y < bounds.yUnits; ++y)
-            {
-                for (uint32_t x = 0; x < bounds.xUnits; ++x)
-                {
-                    uint16_t& tileId = tilemap->at(y, x);
-                    tileId = 0;
-                }
-            }
+            tilemap->fillWithValue(0, 0, 0, bounds.yUnits, bounds.xUnits);
         }
 
     }
@@ -113,11 +107,27 @@ namespace cinekine { namespace overview {
     //      - step 2, paint a rect of wall tiles
     //
     void Builder::paintSegmentOntoMap(TileBrush& brush, const Segment& segment)
-    {
+    {    
+        //  paint floor
+        uint16_t floorTileId = 0;
+        for (auto& tileTemplate: _tileTemplates)
+        {
+            if (tileTemplate.categoryId == brush.tileCategoryId &&
+                tileTemplate.classId == brush.tileClassId)
+            {
+                if (tileTemplate.roleFlags & kTileRole_Floor)
+                {
+                    floorTileId = (uint16_t)tileTemplate.bitmapHandle;
+                }
+            }
+        }
         cinekine::overview::Tilemap* gridFloor = _map.tilemapAtZ(0);
+        gridFloor->fillWithValue(floorTileId, segment.y0, segment.x0,
+                                 (segment.y1 - segment.y0)+1,
+                                 (segment.x1 - segment.x0)+1);
+        //  paint walls
         cinekine::overview::Tilemap* gridWall = _map.tilemapAtZ(1);
-        //  The segment's metadata instructs the builder how to plot it onto
-        //  the current map.   
+
     }
     
 } /* namespace overview */ } /* namespace cinekine */
