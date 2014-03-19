@@ -14,17 +14,19 @@ include( GameLabsBuild )
 #
 
 set( PROJECT_INCLUDES 
-     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.hpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/grid.hpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/map.hpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/maptypes.hpp" )
+     "${CMAKE_CURRENT_SOURCE_DIR}/maptypes.hpp" 
+     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.hpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/tiledatabase.hpp" )
 
 set( PROJECT_SOURCES
 	 "${GAMELABS_PROJECTS_DIR}/voronoi/voronoi.cpp"
      "${GAMELABS_PROJECTS_DIR}/jobqueue/jobqueue.cpp"
      "${GAMELABS_PROJECTS_DIR}/jobqueue/jobscheduler.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/map.cpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.cpp" )
+     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.cpp" 
+     "${CMAKE_CURRENT_SOURCE_DIR}/tiledatabase.cpp" )
 
 #
 # Build Project

@@ -30,6 +30,12 @@
 
 #include <array>
 
+namespace cinekine {
+    namespace overview {
+        class TileDatabase;
+    }
+}
+
 namespace cinekine { namespace overview {
 
     //
@@ -108,7 +114,7 @@ namespace cinekine { namespace overview {
     {
     public:
         Builder(Map& map,
-                const TileTemplates& tileTemplates,
+                const TileDatabase& tileTemplates,
                 uint32_t numRooms);
 
         virtual Result execute(JobScheduler& scheduler,
@@ -124,7 +130,7 @@ namespace cinekine { namespace overview {
     private:
         Map& _map;
         std::vector<Room> _rooms;
-        const TileTemplates& _tileTemplates;
+        const TileDatabase& _tileTemplates;
 
         uint32_t _roomLimit;
     };

@@ -51,6 +51,19 @@ namespace cinekine { namespace overview {
         kTileRole_Floor         = 0x1000
     };
 
+    typedef uint16_t TileHandle;
+
+    /**
+     * @struct  MapBounds
+     * @brief   Defines bounds for a map
+     */
+    struct MapBounds
+    {
+        uint32_t xUnits;             /**< X units */
+        uint32_t yUnits;             /**< Y units */
+        uint32_t zUnits;             /**< Z units (layers) */
+    };
+
     /**
      * @struct  TileTemplate
      * @brief   Information attached to a tile used by the game engine
@@ -64,19 +77,6 @@ namespace cinekine { namespace overview {
         uint32_t params[2];         /**< Application defined values */
 
         TileTemplate() : bitmapHandle((uint32_t)(-1)) {}
-    };
-
-    typedef std::vector<TileTemplate> TileTemplates;
-
-    /**
-     * @struct  MapBounds
-     * @brief   Defines bounds for a map
-     */
-    struct MapBounds
-    {
-        uint32_t xUnits;             /**< X units */
-        uint32_t yUnits;             /**< Y units */
-        uint32_t zUnits;             /**< Z units (layers) */
     };
 
 } /* namespace overview */ } /* namespace cinekine */

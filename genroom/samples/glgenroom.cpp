@@ -39,6 +39,7 @@
 #include "genroom.hpp"
 #include "bitmap.hpp"
 #include "graphics.hpp"
+#include "tiledatabase.hpp"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -170,7 +171,7 @@ class Application
     cinekine::JobHandle _builderJob;
     cinekine::overview::Context _context;
 
-    cinekine::overview::TileTemplates _tileTemplates;
+    cinekine::overview::TileDatabase _tileTemplates;
     std::unique_ptr<cinekine::overview::Map> _map;
     std::unique_ptr<cinekine::overview::Architect> _architect;
 
@@ -181,23 +182,23 @@ public:
         _graphics(graphics),
         _jobQueue(32),
         _builderJob(cinekine::kNullJobHandle),
+        _tileTemplates(256),
         _map()
     {
-        _tileTemplates.resize(256);
-
         for (auto& tile : _tileToSprites)
         {
             if (!tile.name)
                 break;
             _graphics.mapTile(tile.handle, tile.name);
 
-            auto& tileTemplate = _tileTemplates[tile.handle];
+            cinekine::overview::TileTemplate tileTemplate;
             tileTemplate.bitmapHandle = tile.handle;
             tileTemplate.roleFlags = tile.roleFlags;
             tileTemplate.classId = tile.classId;
             tileTemplate.categoryId = tile.categoryId;
             tileTemplate.params[0] = 0;
             tileTemplate.params[1] = 0;
+            _tileTemplates.mapTemplate(tile.handle, tileTemplate);
         }
     }
 

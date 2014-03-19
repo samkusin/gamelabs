@@ -24,6 +24,7 @@
 
 #include "genroom.hpp"
 #include "maptypes.hpp"
+#include "tiledatabase.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -51,7 +52,7 @@ namespace cinekine { namespace overview {
     }
 
     Builder::Builder(Map& map,
-                     const TileTemplates& tileTemplates,
+                     const TileDatabase& tileTemplates,
                      uint32_t numRooms) :
         _map(map),
         _tileTemplates(tileTemplates),
@@ -109,25 +110,28 @@ namespace cinekine { namespace overview {
     void Builder::paintSegmentOntoMap(TileBrush& brush, const Segment& segment)
     {    
         //  paint floor
-        uint16_t floorTileId = 0;
-        for (auto& tileTemplate: _tileTemplates)
-        {
-            if (tileTemplate.categoryId == brush.tileCategoryId &&
-                tileTemplate.classId == brush.tileClassId)
-            {
-                if (tileTemplate.roleFlags & kTileRole_Floor)
-                {
-                    floorTileId = (uint16_t)tileTemplate.bitmapHandle;
-                }
-            }
-        }
+        TileHandle floorTileId = _tileTemplates.tileHandleFromDescriptor(
+                                        brush.tileCategoryId,
+                                        brush.tileClassId,
+                                        kTileRole_Floor);
+
         cinekine::overview::Tilemap* gridFloor = _map.tilemapAtZ(0);
         gridFloor->fillWithValue(floorTileId, segment.y0, segment.x0,
                                  (segment.y1 - segment.y0)+1,
                                  (segment.x1 - segment.x0)+1);
-        //  paint walls
-        cinekine::overview::Tilemap* gridWall = _map.tilemapAtZ(1);
 
+        //  paint walls
+        //  iterate through all the cells in this segment
+        //      evaluate wall segment based on the adjacent wall and floor tiles
+        //      
+        cinekine::overview::Tilemap* gridWall = _map.tilemapAtZ(1);
+        for (uint32_t yPos = segment.y0; yPos < segment.y1; ++yPos)
+        {
+            for (uint32_t xPos = segment.x0; xPos < segment.x1; ++xPos)
+            {
+                TileHandle tileId = gridWall->at(yPos, xPos);
+            }
+        }
     }
     
 } /* namespace overview */ } /* namespace cinekine */
