@@ -41,15 +41,15 @@ namespace cinekine { namespace overview {
     //
     //  Builder types
     //
-    
+
     // @struct TileBrush
-    // @brief  
+    // @brief
     struct TileBrush
     {
         uint8_t tileCategoryId;
         uint8_t tileClassId;
     };
-    
+
     /// @struct Segment
     /// @brief  A single rectangular segment - the most basic element used when
     ///         building room-based maps
@@ -72,7 +72,7 @@ namespace cinekine { namespace overview {
         void addSegment(const Segment& segment);
 
     private:
-        std::array<Segment, 4> _segments;        
+        std::array<Segment, 4> _segments;
         uint32_t _segmentCount;
     };
 
@@ -80,10 +80,10 @@ namespace cinekine { namespace overview {
     /// @class Architect
     /// @brief An interface for implementing the Builder's Architect, which
     ///        directs the Builder
-    ///        
+    ///
     /// This allows customization of building tasks by an implementing
     /// application.
-    /// 
+    ///
     class Architect
     {
     public:
@@ -101,7 +101,7 @@ namespace cinekine { namespace overview {
 
     /// The Builder Context
     /// Applications pass data to the Builder via the Context
-    /// 
+    ///
     struct Context
     {
         Architect *architect;
@@ -109,7 +109,7 @@ namespace cinekine { namespace overview {
 
     /// @class Builder
     /// @brief The Builder Job responsible for generating Rooms from Segments
-    // 
+    //
     class Builder : public Job
     {
     public:
@@ -119,13 +119,16 @@ namespace cinekine { namespace overview {
 
         virtual Result execute(JobScheduler& scheduler,
                                void* context);
-    
+
         virtual int32_t priority() const {
             return 0;
         }
 
     private:
         void paintSegmentOntoMap(TileBrush& brush, const Segment& segment);
+        void paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
+                            const TileBrush& brush);
+        bool tileFloorsClassIdEqual(const Tile& tile, uint8_t thisClassId) const;
 
     private:
         Map& _map;

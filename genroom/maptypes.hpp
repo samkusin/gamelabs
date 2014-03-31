@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace cinekine { namespace overview {
-    
+
     enum
     {
         kTileDirection_N       = 0x0001,   /**< North */
@@ -52,6 +52,16 @@ namespace cinekine { namespace overview {
     };
 
     typedef uint16_t TileHandle;
+
+    /**
+     * @struct  Tile
+     * @brief   Represents a single tile
+     */
+    struct Tile
+    {
+        TileHandle floor;
+        TileHandle wall;
+    };
 
     /**
      * @struct  MapBounds

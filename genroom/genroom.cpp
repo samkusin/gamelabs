@@ -65,8 +65,9 @@ namespace cinekine { namespace overview {
 
         for (uint32_t z = 0; z < bounds.zUnits; ++z)
         {
-            cinekine::overview::Tilemap* tilemap = _map.tilemapAtZ(z);
-            tilemap->fillWithValue(0, 0, 0, bounds.yUnits, bounds.xUnits);
+            Tilemap* tilemap = _map.tilemapAtZ(z);
+            Tile zeroTile = { 0, 0 };
+            tilemap->fillWithValue(zeroTile, 0, 0, bounds.yUnits, bounds.xUnits);
         }
 
     }
@@ -108,30 +109,114 @@ namespace cinekine { namespace overview {
     //      - step 2, paint a rect of wall tiles
     //
     void Builder::paintSegmentOntoMap(TileBrush& brush, const Segment& segment)
-    {    
+    {
         //  paint floor
         TileHandle floorTileId = _tileTemplates.tileHandleFromDescriptor(
                                         brush.tileCategoryId,
                                         brush.tileClassId,
                                         kTileRole_Floor);
 
-        cinekine::overview::Tilemap* gridFloor = _map.tilemapAtZ(0);
-        gridFloor->fillWithValue(floorTileId, segment.y0, segment.x0,
+        Tile tile;
+        tile.floor = floorTileId;
+        tile.wall = 0;
+
+        cinekine::overview::Tilemap* tileMap = _map.tilemapAtZ(0);
+        tileMap->fillWithValue(tile, segment.y0, segment.x0,
                                  (segment.y1 - segment.y0)+1,
                                  (segment.x1 - segment.x0)+1);
 
-        //  paint walls
+        //  paint walls into this segment
         //  iterate through all the cells in this segment
         //      evaluate wall segment based on the adjacent wall and floor tiles
-        //      
-        cinekine::overview::Tilemap* gridWall = _map.tilemapAtZ(1);
-        for (uint32_t yPos = segment.y0; yPos < segment.y1; ++yPos)
+        //
+        for (uint32_t yPos = segment.y0; yPos <= segment.y1; ++yPos)
         {
-            for (uint32_t xPos = segment.x0; xPos < segment.x1; ++xPos)
+            for (uint32_t xPos = segment.x0; xPos <= segment.x1; ++xPos)
             {
-                TileHandle tileId = gridWall->at(yPos, xPos);
+                paintTileWalls(*tileMap, yPos, xPos, brush);
             }
         }
     }
-    
+
+    void Builder::paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
+                                const TileBrush& brush)
+    {
+        const TileTemplate& thisFloorTemplate =
+            _tileTemplates.tile(tileMap.at(tileY, tileX).floor);
+
+        //  calculate wall masks, which are used to determine what wall tiles
+        //  to display.
+        uint16_t wallMask = kTileDirection_N | kTileDirection_E |
+            kTileDirection_W | kTileDirection_S;
+
+        if (tileY > 0 &&
+            tileFloorsClassIdEqual(tileMap.at(tileY-1, tileX), thisFloorTemplate.classId))
+        {
+            wallMask &= ~(kTileDirection_N);
+        }
+        if (tileX > 0 &&
+            tileFloorsClassIdEqual(tileMap.at(tileY, tileX-1), thisFloorTemplate.classId))
+        {
+            wallMask &= ~(kTileDirection_W);
+        }
+        if (tileY < tileMap.rowCount()-1 &&
+            tileFloorsClassIdEqual(tileMap.at(tileY+1, tileX), thisFloorTemplate.classId))
+        {
+            wallMask &= ~(kTileDirection_S);
+        }
+        if (tileX < tileMap.columnCount()-1 &&
+            tileFloorsClassIdEqual(tileMap.at(tileY, tileX+1), thisFloorTemplate.classId))
+        {
+            wallMask &= ~(kTileDirection_E);
+        }
+
+        uint16_t wallRoleFlags = 0;
+        if (wallMask & kTileDirection_W)
+        {
+            if (wallMask & kTileDirection_N)
+                wallRoleFlags |= kTileDirection_NW;
+            else if (wallMask & kTileDirection_S)
+                wallRoleFlags |= kTileDirection_SW;
+            else
+                wallRoleFlags |= kTileDirection_W;
+        }
+        if (!wallRoleFlags && (wallMask & kTileDirection_N))
+        {
+            //  we've already evaluated for West, so only need to eval East
+            if (wallMask & kTileDirection_E)
+                wallRoleFlags |= kTileDirection_NE;
+            else
+                wallRoleFlags |= kTileDirection_N;
+        }
+        if (!wallRoleFlags && (wallMask & kTileDirection_E))
+        {
+            //  we've already evaluated North, so only care about South
+            if (wallMask & kTileDirection_S)
+                wallRoleFlags |= kTileDirection_SE;
+            else
+                wallRoleFlags |= kTileDirection_E;
+        }
+        if (!wallRoleFlags && (wallMask & kTileDirection_S))
+        {
+            //  we've already evaluated East and West, so...
+            wallRoleFlags |= kTileDirection_S;
+        }
+
+        TileHandle wallTileHandle =
+            _tileTemplates.tileHandleFromDescriptor(brush.tileCategoryId,
+                                                brush.tileClassId,
+                                                wallRoleFlags | kTileRole_Wall);
+
+        Tile& thisTile = tileMap.at(tileY, tileX);
+        thisTile.wall = wallTileHandle;
+
+        //uint32_t cornerMask;
+    }
+
+    bool Builder::tileFloorsClassIdEqual(const Tile& tile, uint8_t thisClassId) const
+    {
+        const TileTemplate& floorTemplate = _tileTemplates.tile(tile.floor);
+        return floorTemplate.classId == thisClassId;
+    }
+
 } /* namespace overview */ } /* namespace cinekine */

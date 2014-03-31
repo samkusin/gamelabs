@@ -20,7 +20,7 @@ namespace cinekine {
     namespace overview {
 
 /** Defines a grid of tiles */
-typedef Grid<TileHandle> Tilemap;
+typedef Grid<Tile> Tilemap;
 /** Defines a tilemap section */
 typedef GridContainer<Tilemap> TilemapContainer;
 
@@ -29,17 +29,17 @@ typedef GridContainer<Tilemap> TilemapContainer;
  * @brief Contains map data for display and interaction by a game simulation.
  *
  * A map is comprised of a terrain grid of tiles, and a quad-tree of props.
- * 
+ *
  * Ownership rules:
  * - Map owns its QuadTree
- * - Map owns 
+ * - Map owns
  */
-class Map 
+class Map
 {
 public:
-    /** 
+    /**
      *  Constructor that creates an empty map with specified dimensions.
-     *  
+     *
      *  @param  bounds  Map x,y and z bounds.
      */
     Map(const MapBounds& bounds);
@@ -52,7 +52,7 @@ public:
      * Retrieve map coordinate bounds.
      * Can be used to calculate an index into a tile array.
      * @return  Reference to the map bounds structure.
-     */ 
+     */
     const MapBounds& bounds() const {
         return _bounds;
     }
@@ -76,7 +76,7 @@ private:
     std::vector<Tilemap> _tilemaps;
 };
 
-    } /* overview */ 
+    } /* overview */
 } /* cinekine */
 
 #endif

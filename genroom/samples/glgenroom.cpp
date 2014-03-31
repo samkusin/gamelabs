@@ -59,7 +59,7 @@ struct Tile
 //  for a particular locale, situation, etc
 const uint8_t kTileCategory_Dungeon             = 1;
 
-//  The Class represents the set of all tiles belonging to 'stone', 'brick', 
+//  The Class represents the set of all tiles belonging to 'stone', 'brick',
 //  etc.   For example, all wall and floor tiles that are 'stone' are in one
 //  class, and are often plotted next to each other
 const uint8_t kTileClass_Stone                  = 1;
@@ -120,13 +120,13 @@ std::array<Tile, 256> _tileToSprites = {
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  Builder Architect Implementation wrapper
-//  
+//
 //  Note: our use of GL 2 is not to encourage deprecated GL functionality
 //  in production code.  For sample purposes, where we're prototyping concepts
 //  that aren't graphic-rendering specific, GL 2 is a bit easier to set up,
 //  and we're not concerned about optimizing framerates for very simple 2d
 //  graphics
-// 
+//
 class TheArchitect : public cinekine::overview::Architect
 {
 public:
@@ -146,9 +146,9 @@ public:
         segment.x0 = xMinRange ? (rand() % xMinRange) : 0;
         segment.y0 = yMinRange ? (rand() % yMinRange) : 0;
         segment.x1 = segment.x0 + xSize;
-        segment.y1 = segment.y0 + ySize;      
+        segment.y1 = segment.y0 + ySize;
     }
-   
+
     void onPaintSegment(cinekine::overview::TileBrush& brush,
                         const cinekine::overview::Room& room,
                         const cinekine::overview::Segment& segment)
@@ -162,7 +162,7 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  Application wrapper
-//  
+//
 class Application
 {
     Graphics& _graphics;
@@ -175,7 +175,7 @@ class Application
     std::unique_ptr<cinekine::overview::Map> _map;
     std::unique_ptr<cinekine::overview::Architect> _architect;
 
-    static const uint32_t kNumRooms = 12;
+    static const uint32_t kNumRooms = 36;
 
 public:
     Application(Graphics& graphics) :
@@ -224,10 +224,11 @@ public:
         {
             for (uint32_t x = 0; x < grid->columnCount(); ++x)
             {
-                uint16_t tileId = grid->at(y, x);
-                _graphics.drawTile(x*32,y*32, tileId);
+                const cinekine::overview::Tile& tile = grid->at(y,x);
+                _graphics.drawTile(x*32,y*32, tile.floor);
+                _graphics.drawTile(x*32,y*32, tile.wall);
             }
-        }   
+        }
     }
 
     void draw()
@@ -238,9 +239,8 @@ public:
         {
             _graphics.beginTiles();
             drawTilemap(_map->tilemapAtZ(0));
-            drawTilemap(_map->tilemapAtZ(1));
             _graphics.endTiles();
-        }   
+        }
     }
 
     void buildMap()
@@ -337,9 +337,9 @@ int main(int argc, char* argv[])
     if (window)
     {
         glfwMakeContextCurrent(window);
-        
+
         Graphics graphics("tiles.json");
-        
+
         int frameW, frameH;
         glfwGetFramebufferSize(window, &frameW, &frameH);
         resizeCb(window, frameW, frameH);
@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
 
         Application app(graphics);
         glfwSetWindowUserPointer(window, &app);
-        
+
         float lastFrameTime = (float)glfwGetTime();
         float deltaTime = 0.f;
 
