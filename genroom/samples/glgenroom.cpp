@@ -175,7 +175,7 @@ class Application
     std::unique_ptr<cinekine::overview::Map> _map;
     std::unique_ptr<cinekine::overview::Architect> _architect;
 
-    static const uint32_t kNumRooms = 36;
+    static const uint32_t kNumRooms = 24;
 
 public:
     Application(Graphics& graphics) :
@@ -252,7 +252,7 @@ public:
 
         _map = std::unique_ptr<cinekine::overview::Map>(
             new cinekine::overview::Map(
-                    cinekine::overview::MapBounds{ 32,32,2 }
+                    cinekine::overview::MapBounds{ 36,36,1 }
                     )
                 );
         std::unique_ptr<cinekine::Job> builder(

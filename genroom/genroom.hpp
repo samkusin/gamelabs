@@ -128,7 +128,10 @@ namespace cinekine { namespace overview {
         void paintSegmentOntoMap(TileBrush& brush, const Segment& segment);
         void paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
                             const TileBrush& brush);
+        void paintTileWallCorners(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
+                            const TileBrush& brush);
         bool tileFloorsClassIdEqual(const Tile& tile, uint8_t thisClassId) const;
+        bool tileWallsEqual(const Tile& tile, uint16_t roleFlags, uint8_t classId) const;
 
     private:
         Map& _map;
