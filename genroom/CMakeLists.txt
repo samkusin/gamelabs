@@ -13,19 +13,17 @@ include( GameLabsBuild )
 # set sources
 #
 
-set( PROJECT_INCLUDES 
+set( PROJECT_INCLUDES
      "${CMAKE_CURRENT_SOURCE_DIR}/grid.hpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/map.hpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/maptypes.hpp" 
+     "${CMAKE_CURRENT_SOURCE_DIR}/maptypes.hpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/genroom.hpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/tiledatabase.hpp" )
 
 set( PROJECT_SOURCES
 	 "${GAMELABS_PROJECTS_DIR}/voronoi/voronoi.cpp"
-     "${GAMELABS_PROJECTS_DIR}/jobqueue/jobqueue.cpp"
-     "${GAMELABS_PROJECTS_DIR}/jobqueue/jobscheduler.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/map.cpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.cpp" 
+     "${CMAKE_CURRENT_SOURCE_DIR}/genroom.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/tiledatabase.cpp" )
 
 #
@@ -43,7 +41,7 @@ if( OPENGL_LIBRARY AND GLFW3_LIBRARY )
 		${PROJECT_SOURCES}
         "${GAMELABS_EXT_PACKAGE_DIR}/source/stb/stb_image.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/samples/bitmap.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/samples/graphics.cpp" 
+        "${CMAKE_CURRENT_SOURCE_DIR}/samples/graphics.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/samples/glgenroom.cpp"
 		${PROJECT_INCLUDES}
         "${CMAKE_CURRENT_SOURCE_DIR}/samples/bitmap.hpp" )
@@ -51,7 +49,7 @@ if( OPENGL_LIBRARY AND GLFW3_LIBRARY )
 		${LOCAL_CPP_COMPILE_FLAGS} )
 	set_target_properties( glgenroom PROPERTIES LINK_FLAGS
 		${LOCAL_CPP_LINK_FLAGS} )
-	target_link_libraries( glgenroom 
+	target_link_libraries( glgenroom
 		${OPENGL_LIBRARY} ${GLFW3_LIBRARY} )
 else( )
 	message( WARNING "OpenGL and GLFW3 required to build sample" )

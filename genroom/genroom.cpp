@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2013 Samir Sinha
+ * Copyright (c) 2014 Samir Sinha
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,12 +33,8 @@
 
 namespace cinekine { namespace overview {
 
-    bool Segment::intersects(const Segment& segment) const
-    {
-        return false;
-    }
-
     Room::Room() :
+        _bounds {0,0,0,0},
         _segmentCount(0)
     {
     }
@@ -48,17 +44,46 @@ namespace cinekine { namespace overview {
         if (_segmentCount >= _segments.size())
             return;
 
-        _segments[_segmentCount] = segment;
+        _segments[_segmentCount++] = segment;
+        _bounds.x0 = std::min(_bounds.x0, segment.x0);
+        _bounds.y0 = std::min(_bounds.y0, segment.y0);
+        _bounds.x1 = std::max(_bounds.x1, segment.x1);
+        _bounds.y1 = std::max(_bounds.y1, segment.y1);
     }
 
-    Builder::Builder(Map& map,
-                     const TileDatabase& tileTemplates,
-                     uint32_t numRooms) :
-        _map(map),
-        _tileTemplates(tileTemplates),
-        _roomLimit(numRooms)
+    Segment intersect(const Segment& s0, const Segment& s1)
     {
-        _rooms.reserve(_roomLimit);
+        Segment seg = { 0, 0, 0, 0 };
+        if (s0.x0 > s1.x1 || s1.x0 > s0.x1)
+            return seg;
+        if (s0.y0 > s1.y1 || s1.y0 > s0.y1)
+            return seg;
+
+        seg.x0 = std::max(s0.x0, s1.x0);
+        seg.y0 = std::max(s0.y0, s1.y1);
+        seg.x1 = std::max(s0.x1, s1.x1);
+        seg.y1 = std::max(s0.y1, s1.y1);
+
+        return seg;
+    }
+
+    Segment intersect(const Segment& s0, const Room& room)
+    {
+        Segment seg = intersect(s0, room._bounds);
+        return seg;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    Builder::Builder(Architect& architect,
+                Map& map,
+                const TileDatabase& tileTemplates,
+                uint32_t roomLimit) :
+        _architect(architect),
+        _map(map),
+        _tileTemplates(tileTemplates)
+    {
+        _rooms.reserve(roomLimit);
 
         //  clear all tilemaps
         const cinekine::overview::MapBounds& bounds = _map.bounds();
@@ -72,13 +97,8 @@ namespace cinekine { namespace overview {
 
     }
 
-    auto Builder::execute(JobScheduler& scheduler,
-                          void* context) -> Result
+    void Builder::update()
     {
-        Context& ctx = *reinterpret_cast<Context*>(context);
-        if (!ctx.architect)
-            return kTerminate;
-
         Segment segment;
         segment.x0 = 0;
         segment.y0 = 0;
@@ -86,7 +106,7 @@ namespace cinekine { namespace overview {
         segment.y1 = _map.bounds().yUnits - 1;
 
         //  allow the architect to define the segment's bounds
-        ctx.architect->onNewSegment(segment);
+        _architect.onNewSegment(segment);
 
         _rooms.emplace_back();
         Room& room = _rooms.back();
@@ -94,13 +114,8 @@ namespace cinekine { namespace overview {
 
         //  draw it onto the map
         TileBrush tileBrush;
-        ctx.architect->onPaintSegment(tileBrush, room, segment);
+        _architect.onPaintSegment(tileBrush, room, segment);
         paintSegmentOntoMap(tileBrush, segment);
-
-        if (_rooms.size() >= _roomLimit)
-            return kTerminate;
-
-        return kReschedule;
     }
 
     //  the segment is guaranteed to lie entirely within the map's bounds

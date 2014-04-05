@@ -32,9 +32,6 @@
 #include <cstdlib>
 #include <array>
 
-#include "jobqueue/jobqueue.hpp"
-#include "jobqueue/jobscheduler.hpp"
-
 #include "map.hpp"
 #include "genroom.hpp"
 #include "bitmap.hpp"
@@ -129,16 +126,16 @@ std::array<Tile, 256> _tileToSprites = {
 //
 class TheArchitect : public cinekine::overview::Architect
 {
-public:
-    TheArchitect()
-    {
-    }
+    int _retriesLeft;
+    const cinekine::overview::TileDatabase& _tileTemplates;
+    std::unique_ptr<cinekine::overview::Builder> _builder;
 
-    void onNewSegment(cinekine::overview::Segment& segment)
+    void generateSegment(cinekine::overview::Segment& segment,
+                         int32_t wMin, int32_t hMin,
+                         int32_t wMax, int32_t hMax)
     {
-        //  Determine width and height of our target segment/room
-        int32_t xSize = 3 + (rand() % 3);
-        int32_t ySize = 3 + (rand() % 3);
+        int32_t xSize = wMin + (rand() % (wMax-wMin)+1);
+        int32_t ySize = hMin + (rand() % (hMax-hMin)+1);
         int32_t xMinRange = std::max(0, segment.x1 - xSize + 1);
         int32_t yMinRange = std::max(0, segment.y1 - ySize + 1);
 
@@ -147,6 +144,34 @@ public:
         segment.y0 = yMinRange ? (rand() % yMinRange) : 0;
         segment.x1 = segment.x0 + xSize;
         segment.y1 = segment.y0 + ySize;
+    }
+
+
+    static const uint32_t kNumRooms = 24;
+
+public:
+    TheArchitect(cinekine::overview::Map& map,
+                 const cinekine::overview::TileDatabase& tileTemplates) :
+        _retriesLeft(10),
+        _tileTemplates(tileTemplates)
+    {
+        _builder = std::unique_ptr<cinekine::overview::Builder>(
+            new cinekine::overview::Builder(
+                    *this,
+                    map,
+                    _tileTemplates,
+                    kNumRooms)
+                );
+    }
+
+    void update()
+    {
+        _builder->update();
+    }
+
+    void onNewSegment(cinekine::overview::Segment& segment)
+    {
+        generateSegment(segment, 3, 3, 5, 5);
     }
 
     void onPaintSegment(cinekine::overview::TileBrush& brush,
@@ -167,23 +192,14 @@ class Application
 {
     Graphics& _graphics;
 
-    cinekine::JobQueue _jobQueue;
-    cinekine::JobHandle _builderJob;
-    cinekine::overview::Context _context;
-
     cinekine::overview::TileDatabase _tileTemplates;
     std::unique_ptr<cinekine::overview::Map> _map;
-    std::unique_ptr<cinekine::overview::Architect> _architect;
-
-    static const uint32_t kNumRooms = 24;
+    std::unique_ptr<TheArchitect> _architect;
 
 public:
     Application(Graphics& graphics) :
         _graphics(graphics),
-        _jobQueue(32),
-        _builderJob(cinekine::kNullJobHandle),
-        _tileTemplates(256),
-        _map()
+        _tileTemplates(256)
     {
         for (auto& tile : _tileToSprites)
         {
@@ -202,18 +218,12 @@ public:
         }
     }
 
-    ~Application()
-    {
-        _jobQueue.cancel(_builderJob);
-        _builderJob = cinekine::kNullJobHandle;
-    }
-
     void update(float deltaTime)
     {
-        _context.architect = _architect.get();
-
-        _jobQueue.schedule();
-        while (_jobQueue.dispatch(&_context)) {}
+        if (_architect)
+        {
+            _architect->update();
+        }
     }
 
     void drawTilemap(cinekine::overview::Tilemap* grid)
@@ -245,26 +255,14 @@ public:
 
     void buildMap()
     {
-        if (_jobQueue.validJob(_builderJob))
-        {
-            _jobQueue.cancel(_builderJob);
-        }
-
         _map = std::unique_ptr<cinekine::overview::Map>(
             new cinekine::overview::Map(
                     cinekine::overview::MapBounds{ 36,36,1 }
                     )
                 );
-        std::unique_ptr<cinekine::Job> builder(
-            new cinekine::overview::Builder(
-                    *_map,
-                    _tileTemplates,
-                    kNumRooms)
-                );
-        _builderJob = _jobQueue.add(std::move(builder));
         _architect =
-            std::unique_ptr<cinekine::overview::Architect>(
-                new TheArchitect()
+            std::unique_ptr<TheArchitect>(
+                new TheArchitect(*_map, _tileTemplates)
             );
     }
 

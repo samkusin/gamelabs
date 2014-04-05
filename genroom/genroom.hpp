@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2013 Samir Sinha
+ * Copyright (c) 2014 Samir Sinha
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,6 @@
 #ifndef CK_Sample_GenRoom_Hpp
 #define CK_Sample_GenRoom_Hpp
 
-#include "jobqueue/job.hpp"
 #include "map.hpp"
 
 #include <array>
@@ -58,7 +57,9 @@ namespace cinekine { namespace overview {
         int32_t x0,y0;      // pt1 (upper,left)
         int32_t x1,y1;      // pt2 (lower,right)
 
-        bool intersects(const Segment& segment) const;
+        operator bool() const {
+            return !(x1-x0) && !(y1-y0);    // is empty?
+        }
     };
 
     /// @class Room
@@ -72,9 +73,15 @@ namespace cinekine { namespace overview {
         void addSegment(const Segment& segment);
 
     private:
+        Segment _bounds;
         std::array<Segment, 4> _segments;
         uint32_t _segmentCount;
+
+        friend Segment intersect(const Segment& s1, const Room& room);
     };
+
+    Segment intersect(const Segment& s0, const Segment& s1);
+    Segment intersect(const Segment& s0, const Room& room);
 
 
     /// @class Architect
@@ -99,30 +106,18 @@ namespace cinekine { namespace overview {
                                     const Room& room, const Segment& segment) = 0;
     };
 
-    /// The Builder Context
-    /// Applications pass data to the Builder via the Context
-    ///
-    struct Context
-    {
-        Architect *architect;
-    };
-
     /// @class Builder
-    /// @brief The Builder Job responsible for generating Rooms from Segments
+    /// @brief The Builder responsible for generating Rooms from Segments
     //
-    class Builder : public Job
+    class Builder
     {
     public:
-        Builder(Map& map,
+        Builder(Architect& architect,
+                Map& map,
                 const TileDatabase& tileTemplates,
-                uint32_t numRooms);
+                uint32_t roomLimit);
 
-        virtual Result execute(JobScheduler& scheduler,
-                               void* context);
-
-        virtual int32_t priority() const {
-            return 0;
-        }
+        void update();
 
     private:
         void paintSegmentOntoMap(TileBrush& brush, const Segment& segment);
@@ -134,11 +129,10 @@ namespace cinekine { namespace overview {
         bool tileWallsEqual(const Tile& tile, uint16_t roleFlags, uint8_t classId) const;
 
     private:
+        Architect& _architect;
         Map& _map;
         std::vector<Room> _rooms;
         const TileDatabase& _tileTemplates;
-
-        uint32_t _roomLimit;
     };
 } /* namespace overview */ } /* namespace cinekine */
 
