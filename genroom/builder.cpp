@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include "genroom.hpp"
+#include "builder.hpp"
 #include "maptypes.hpp"
 #include "tiledatabase.hpp"
 
@@ -33,46 +33,6 @@
 
 namespace cinekine { namespace overview {
 
-    Room::Room() :
-        _bounds {0,0,0,0},
-        _segmentCount(0)
-    {
-    }
-
-    void Room::addSegment(const Segment& segment)
-    {
-        if (_segmentCount >= _segments.size())
-            return;
-
-        _segments[_segmentCount++] = segment;
-        _bounds.x0 = std::min(_bounds.x0, segment.x0);
-        _bounds.y0 = std::min(_bounds.y0, segment.y0);
-        _bounds.x1 = std::max(_bounds.x1, segment.x1);
-        _bounds.y1 = std::max(_bounds.y1, segment.y1);
-    }
-
-    Segment intersect(const Segment& s0, const Segment& s1)
-    {
-        Segment seg = { 0, 0, 0, 0 };
-        if (s0.x0 > s1.x1 || s1.x0 > s0.x1)
-            return seg;
-        if (s0.y0 > s1.y1 || s1.y0 > s0.y1)
-            return seg;
-
-        seg.x0 = std::max(s0.x0, s1.x0);
-        seg.y0 = std::max(s0.y0, s1.y1);
-        seg.x1 = std::max(s0.x1, s1.x1);
-        seg.y1 = std::max(s0.y1, s1.y1);
-
-        return seg;
-    }
-
-    Segment intersect(const Segment& s0, const Room& room)
-    {
-        Segment seg = intersect(s0, room._bounds);
-        return seg;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
 
     Builder::Builder(Architect& architect,
@@ -81,9 +41,11 @@ namespace cinekine { namespace overview {
                 uint32_t roomLimit) :
         _architect(architect),
         _map(map),
-        _tileTemplates(tileTemplates)
+        _tileTemplates(tileTemplates),
+        _building(true)
     {
-        _rooms.reserve(roomLimit);
+        _regions.reserve(roomLimit);
+        _segments.reserve(roomLimit*8);
 
         //  clear all tilemaps
         const cinekine::overview::MapBounds& bounds = _map.bounds();
@@ -99,23 +61,60 @@ namespace cinekine { namespace overview {
 
     void Builder::update()
     {
-        Segment segment;
-        segment.x0 = 0;
-        segment.y0 = 0;
-        segment.x1 = _map.bounds().xUnits - 1;
-        segment.y1 = _map.bounds().yUnits - 1;
+        if (!_building)
+            return;
 
-        //  allow the architect to define the segment's bounds
-        _architect.onNewSegment(segment);
+        //  Send a request for a new room within our entire map bounds
+        //  the builder currently is pretty simple - it requests a room and then
+        //  paints it.
+        //
+        NewRegionRequest newRegionReq;
+        newRegionReq.mapBounds = { 0, 0,
+            (int32_t)_map.bounds().xUnits, (int32_t)_map.bounds().yUnits };
+        auto newRegionResp = _architect.onNewRegionRequest(newRegionReq);
 
-        _rooms.emplace_back();
-        Room& room = _rooms.back();
-        room.addSegment(segment);
+        Region* region = nullptr;
+        bool finalize = false;
+        for (auto& cmd : newRegionResp.instructions)
+        {
+            Box segBox = cmd.box;
 
-        //  draw it onto the map
-        TileBrush tileBrush;
-        _architect.onPaintSegment(tileBrush, room, segment);
-        paintSegmentOntoMap(tileBrush, segment);
+            switch (cmd.policy)
+            {
+            case NewRegionInstruction::kRandomize:
+                break;
+            case NewRegionInstruction::kFixed:
+                break;
+            default:
+                finalize = true;
+                break;
+            }
+
+            if (_segments.size() >= _segments.capacity())
+            {
+                finalize = true;
+            }
+
+            if (!finalize)
+            {
+                if (!region)
+                {
+                    _regions.emplace_back();
+                    region = &_regions.back();
+                }
+                _segments.emplace_back(segBox);
+                auto* segment = &_segments.back();
+
+                region->segments.push_back(segment);
+
+                paintSegmentOntoMap(newRegionResp.tileBrush, *segment);
+            }
+            else
+            {
+                _building = false;
+                break;
+            }
+        }
     }
 
     //  the segment is guaranteed to lie entirely within the map's bounds
@@ -136,9 +135,9 @@ namespace cinekine { namespace overview {
         tile.wall = 0;
 
         cinekine::overview::Tilemap* tileMap = _map.tilemapAtZ(0);
-        tileMap->fillWithValue(tile, segment.y0, segment.x0,
-                                 (segment.y1 - segment.y0)+1,
-                                 (segment.x1 - segment.x0)+1);
+        tileMap->fillWithValue(tile, segment.box.y0, segment.box.x0,
+                                 segment.box.y1 - segment.box.y0,
+                                 segment.box.x1 - segment.box.x0);
 
         //  paint walls into this segment
         //  this is a two step process - painting wall tiles, and a second
@@ -146,16 +145,17 @@ namespace cinekine { namespace overview {
         //      first pass.
         //
         uint32_t yPos;
-        for (yPos = segment.y0; yPos <= segment.y1; ++yPos)
+        const Box& box = segment.box;
+        for (yPos = box.y0; yPos < box.y1; ++yPos)
         {
-            for (uint32_t xPos = segment.x0; xPos <= segment.x1; ++xPos)
+            for (uint32_t xPos = box.x0; xPos < box.x1; ++xPos)
             {
                 paintTileWalls(*tileMap, yPos, xPos, brush);
             }
         }
-        for (yPos = segment.y0; yPos <= segment.y1; ++yPos)
+        for (yPos = box.y0; yPos < box.y1; ++yPos)
         {
-            for (uint32_t xPos = segment.x0; xPos <= segment.x1; ++xPos)
+            for (uint32_t xPos = box.x0; xPos < box.x1; ++xPos)
             {
                 paintTileWallCorners(*tileMap, yPos, xPos, brush);
             }

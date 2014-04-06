@@ -33,10 +33,13 @@
 #include <array>
 
 #include "map.hpp"
-#include "genroom.hpp"
+#include "builder.hpp"
 #include "bitmap.hpp"
 #include "graphics.hpp"
 #include "tiledatabase.hpp"
+
+const int32_t kMapWidth = 56;
+const int32_t kMapHeight = 40;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,41 +121,58 @@ std::array<Tile, 256> _tileToSprites = {
 //
 //  Builder Architect Implementation wrapper
 //
-//  Note: our use of GL 2 is not to encourage deprecated GL functionality
-//  in production code.  For sample purposes, where we're prototyping concepts
-//  that aren't graphic-rendering specific, GL 2 is a bit easier to set up,
-//  and we're not concerned about optimizing framerates for very simple 2d
-//  graphics
+//  The Architect implementation's primary responsibility is to generate
+//  region building instructions and pass them to the Builder upon request.
+//
+//  How it does this relies on the buliding strategy - in this simple
+//  implementation we randomize room placement and submit build instructions
+//  assuming one room = one building region.
 //
 class TheArchitect : public cinekine::overview::Architect
 {
-    int _retriesLeft;
+    struct Room
+    {
+        cinekine::overview::Box box;
+    };
+
     const cinekine::overview::TileDatabase& _tileTemplates;
     std::unique_ptr<cinekine::overview::Builder> _builder;
+    std::vector<Room> _rooms;
 
-    void generateSegment(cinekine::overview::Segment& segment,
-                         int32_t wMin, int32_t hMin,
-                         int32_t wMax, int32_t hMax)
+    //  determines whether we can build a room from the specified box region
+    bool canBuildRoom(const cinekine::overview::Box& bounds,
+        const cinekine::overview::Box& box) const
     {
-        int32_t xSize = wMin + (rand() % (wMax-wMin)+1);
-        int32_t ySize = hMin + (rand() % (hMax-hMin)+1);
-        int32_t xMinRange = std::max(0, segment.x1 - xSize + 1);
-        int32_t yMinRange = std::max(0, segment.y1 - ySize + 1);
+        if (!box.inside(bounds))
+            return false;
 
-        //  define a random segment within the supplied bounding segment
-        segment.x0 = xMinRange ? (rand() % xMinRange) : 0;
-        segment.y0 = yMinRange ? (rand() % yMinRange) : 0;
-        segment.x1 = segment.x0 + xSize;
-        segment.y1 = segment.y0 + ySize;
+        for (auto& room : _rooms)
+        {
+            if (room.box.intersects(box))
+                return false;
+        }
+        printf("canBuildRoom!\n");
+        return true;
     }
 
-
-    static const uint32_t kNumRooms = 24;
+    //  randomize a box.  one or more boxes comprise a room
+    auto generateBox(int32_t wMin, int32_t hMin,
+                int32_t wMax, int32_t hMax) -> cinekine::overview::Box
+    {
+        cinekine::overview::Box box;
+        int32_t xSize = wMin + (rand() % (wMax-wMin)+1);
+        int32_t ySize = hMin + (rand() % (hMax-hMin)+1);
+        //  define a random segment within the supplied bounding segment
+        box.x0 = 0;
+        box.y0 = 0;
+        box.x1 = xSize;
+        box.y1 = ySize;
+        return box;
+    }
 
 public:
     TheArchitect(cinekine::overview::Map& map,
                  const cinekine::overview::TileDatabase& tileTemplates) :
-        _retriesLeft(10),
         _tileTemplates(tileTemplates)
     {
         _builder = std::unique_ptr<cinekine::overview::Builder>(
@@ -160,7 +180,7 @@ public:
                     *this,
                     map,
                     _tileTemplates,
-                    kNumRooms)
+                    256)
                 );
     }
 
@@ -169,19 +189,89 @@ public:
         _builder->update();
     }
 
-    void onNewSegment(cinekine::overview::Segment& segment)
+    auto onNewRegionRequest(const cinekine::overview::NewRegionRequest& request) ->
+        cinekine::overview::NewRegionResponse
     {
-        generateSegment(segment, 3, 3, 5, 5);
+        cinekine::overview::NewRegionResponse resp;
+        resp.tileBrush = { kTileCategory_Dungeon, kTileClass_Stone };
+
+        //  prioritize large rooms.  If our randomized room selection cannot
+        //  fit a 3x3 room minimum, then we (likely) have no room to build
+        int32_t boxMinW = 12, boxMinH = 12;
+        bool widthDominant = true;
+        auto roomBox = cinekine::overview::Box::kEmpty;
+
+        while (boxMinW >= 3 && boxMinH >= 3)
+        {
+            roomBox = generateBox(
+                    boxMinW, boxMinH,
+                    boxMinW + boxMinW/2,
+                    boxMinH + boxMinH/2);
+
+            //  randomize our box origin - this is the simplest way to
+            //  position a box.  basically in this implementation, there's no
+            //  design to our room layout
+            int xVariance = request.mapBounds.width() - roomBox.width();
+            int yVariance = request.mapBounds.height() - roomBox.height();
+            int attempts = 0;
+            bool boxAllowed = false;
+            int32_t roomX1 = roomBox.x1;
+            int32_t roomY1 = roomBox.y1;
+            const int kMaxAttempts = 16;
+            do
+            {
+                roomBox.x0 = request.mapBounds.x0;
+                roomBox.y0 = request.mapBounds.y0;
+                if (xVariance > 0)
+                    roomBox.x0 += (rand() % (xVariance+1));
+                if (yVariance > 0)
+                    roomBox.y0 += (rand() % (yVariance+1));
+                roomBox.x1 = roomX1 + roomBox.x0;
+                roomBox.y1 = roomY1 + roomBox.y0;
+                ++attempts;
+            }
+            while(!(boxAllowed = canBuildRoom(request.mapBounds, roomBox))
+                    && attempts < kMaxAttempts);
+            if (boxAllowed)
+                break;
+
+            roomBox = cinekine::overview::Box::kEmpty;
+
+            //  shrink our box size since our (admittedly weak) box test
+            //  failed.  then try again.
+            if (widthDominant)
+            {
+                boxMinH -= 3;
+            }
+            else
+            {
+                boxMinW -= 3;
+            }
+            widthDominant = !widthDominant;
+        }
+
+        if (roomBox)
+        {
+            Room room;
+            room.box = roomBox;
+            _rooms.push_back(room);
+
+            auto policy = cinekine::overview::NewRegionInstruction::kRandomize;
+            resp.instructions.emplace_back(policy);
+
+            auto& instruction = resp.instructions.back();
+            instruction.box = roomBox;
+            instruction.terminal = true;
+        }
+        else
+        {
+            //  done
+            resp.instructions.emplace_back(cinekine::overview::NewRegionInstruction::kFinalize);
+        }
+
+        return resp;
     }
 
-    void onPaintSegment(cinekine::overview::TileBrush& brush,
-                        const cinekine::overview::Room& room,
-                        const cinekine::overview::Segment& segment)
-    {
-        //  set our brush
-        brush.tileCategoryId = kTileCategory_Dungeon;
-        brush.tileClassId = kTileClass_Stone;
-    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -257,7 +347,7 @@ public:
     {
         _map = std::unique_ptr<cinekine::overview::Map>(
             new cinekine::overview::Map(
-                    cinekine::overview::MapBounds{ 36,36,1 }
+                    cinekine::overview::MapBounds{ kMapWidth,kMapHeight,1 }
                     )
                 );
         _architect =

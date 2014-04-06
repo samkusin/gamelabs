@@ -2,7 +2,7 @@
  * \file    overview/grid.hpp
  *
  * A 2d grid data object for tile-maps and other MxN data structures.
- * 
+ *
  * \note    Created by Samir Sinha on 3/10/13.
  *          Copyright (c) 2013 Cinekine. All rights reserved.
  */
@@ -26,9 +26,9 @@ namespace cinekine {
  */
 template<typename Value>
 class Grid
-{   
+{
 public:
-    /** 
+    /**
      *  Defines a start and end point for T items in a row.  The end pointer
      *  points past the last item in the strip (iteration should stop if the compared
      *  pointer is greater than or equal to the end pointer.
@@ -44,9 +44,9 @@ public:
      * Empty grid constructor.
      */
     Grid();
-    /** 
+    /**
      *  Constructor that creates an gridwith specified dimensions.
-     *  
+     *
      *  @param rowCount     Number of rows in the grid.
      *  @param columnCount  Number of columns in the grid.
      */
@@ -70,40 +70,40 @@ public:
     /** @return Number of columns in grid */
     uint32_t columnCount() const { return _colCount; }
     /**
-     * Gets a const reference of the value at the specified row, column. 
+     * Gets a const reference of the value at the specified row, column.
      * @param  row The row [0, rowCount-1]
      * @param  col The column [0, columnCount-1]
      * @return     A reference of the value at row,col.
      */
     const Value& at(uint32_t row, uint32_t col) const;
     /**
-     * Gets a reference of the value at the specified row, column. 
+     * Gets a reference of the value at the specified row, column.
      * @param  row The row [0, rowCount-1]
      * @param  col The column [0, columnCount-1]
      * @return     A reference of the value at row,col.
      */
     Value& at(uint32_t row, uint32_t col);
     /**
-     * Returns a pointer to the data row in the grid.  To retrieve data at a 
+     * Returns a pointer to the data row in the grid.  To retrieve data at a
      * specific column, use pointer math, atRow(row) + columnIndex.
      * @param  row      Row index in grid [0, rowCount()]
      * @param  col      Column offset from start of row.
      * @param  length   Number of columns in row to use.  If UINT32_MAX, the strip
      *                  will run to the end of the row.
-     * @return          A row strip pointer pair.  If the row or column 
-     *                  parameter lie out of the grid's range, returns a 
+     * @return          A row strip pointer pair.  If the row or column
+     *                  parameter lie out of the grid's range, returns a
      *                  null_row_strip.
      */
     row_strip atRow(uint32_t row, uint32_t col, uint32_t length=UINT32_MAX);
     /**
-     * Returns a const pointer to the data row in the grid.  To retrieve data 
+     * Returns a const pointer to the data row in the grid.  To retrieve data
      * at a specific column, use pointer math, atRow(row) + columnIndex.
      * @param  row Row index in grid [0, rowCount()]
      * @param  col      Column offset from start of row.
      * @param  length   Number of columns in row to use.  If UINT32_MAX, the strip
      *                  will run to the end of the row.
-     * @return          A row strip pointer pair.  If the row or column 
-     *                  parameter lie out of the grid's range, returns a 
+     * @return          A row strip pointer pair.  If the row or column
+     *                  parameter lie out of the grid's range, returns a
      *                  null_row_strip.
      */
     const_row_strip atRow(uint32_t row, uint32_t col, uint32_t length=UINT32_MAX) const;
@@ -127,18 +127,18 @@ private:
 /**
  * @class GridContainer grid.hpp "cinek/overview/grid.hpp"
  * @brief Defines a window within a Grid object.
- * Supports STL styles iteration of rows, where the value of each row is a 
+ * Supports STL styles iteration of rows, where the value of each row is a
  * pair of pointers marking the start and the end of a row.
  */
 template<class GridType>
 class GridContainer
 {
 public:
-    /** 
+    /**
      *  Defines a start and end point for T items in a row.  The end pointer
      *  points past the last item in the strip (iteration should stop if the compared
      *  pointer is greater than or equal to the end pointer.
-     */ 
+     */
     typedef typename GridType::row_strip row_strip;
     /**
      *  Const version of row_strip.
@@ -148,7 +148,7 @@ public:
     GridContainer() :
         _grid(nullptr), _row(0), _column(0), _rowCount(0), _colCount(0) {}
 
-    /** 
+    /**
      * Initializes a container for a grid object.
      * @param grid The grid object conforming to the Grid<T> class specficiation.
      */
@@ -164,10 +164,10 @@ public:
      * @param rowCount  Number of rows to map from the specified grid.
      * @param colCount  Number of columns to map from the specified grid.
      */
-    GridContainer(GridType& grid, 
-            uint32_t row, 
-            uint32_t column, 
-            uint32_t rowCount, 
+    GridContainer(GridType& grid,
+            uint32_t row,
+            uint32_t column,
+            uint32_t rowCount,
             uint32_t colCount
         ) :
         _grid(&grid), _row(row), _column(column),
@@ -181,7 +181,7 @@ public:
     GridContainer(const GridContainer& rhs) :
         _grid(rhs._grid), _row(rhs._row), _column(rhs._column),
         _rowCount(rhs._rowCount), _colCount(rhs._colCount) {}
-    
+
     /** @return The starting row index from the grid. */
     uint32_t rowOrigin() const { return _row; }
     /** @return The starting column index from the grid. */
@@ -196,7 +196,7 @@ public:
      * @param  row       The row within the container.
      * @return           The row_strip.
      */
-    row_strip atRow(uint32_t row) { 
+    row_strip atRow(uint32_t row) {
         return _grid ? _grid->atRow(_row+row, _column, _colCount) : row_strip();
     }
     /**
@@ -205,14 +205,14 @@ public:
      * @return           The const_row_strip.
      */
     const_row_strip atRow(uint32_t row) const {
-        return _grid ? _grid->atRow(_row+row, _column, _colCount) : const_row_strip(); 
+        return _grid ? _grid->atRow(_row+row, _column, _colCount) : const_row_strip();
     }
 
     /**
      * std::iterator support
      */
     template<typename ValueType>
-    class base_iterator : 
+    class base_iterator :
         public std::iterator<std::input_iterator_tag, ValueType>
     {
         GridType* _grid;
@@ -221,25 +221,25 @@ public:
     public:
         /** @cond */
         base_iterator() : _grid(nullptr), _row(0), _col(0), _colcount(0) {}
-        base_iterator(GridType* x, uint32_t row, uint32_t col, uint32_t colcount) : 
+        base_iterator(GridType* x, uint32_t row, uint32_t col, uint32_t colcount) :
             _grid(x), _row(row), _col(col), _colcount(colcount) {}
-        base_iterator(const base_iterator& mit) : 
+        base_iterator(const base_iterator& mit) :
             _grid(mit._grid), _row(mit._row), _col(mit._col), _colcount(mit._colcount) {}
         base_iterator& operator++() {
             ++_row;
             return *this;
         }
         base_iterator operator++(int) {
-            iterator tmp(*this); 
-            operator++(); 
+            iterator tmp(*this);
+            operator++();
             return tmp;
         }
         bool operator==(const base_iterator& rhs) {
-            return _grid == rhs._grid && _row == rhs._row && _col==rhs._col && 
+            return _grid == rhs._grid && _row == rhs._row && _col==rhs._col &&
                 _colcount==rhs._colcount;
         }
         bool operator!=(const base_iterator& rhs) {
-            return _grid != rhs._grid || _row != rhs._row || _col!=rhs._col || 
+            return _grid != rhs._grid || _row != rhs._row || _col!=rhs._col ||
                 _colcount!=rhs._colcount;
         }
         ValueType operator*() {
@@ -342,7 +342,7 @@ Value& Grid<Value>::at(uint32_t row, uint32_t col)
 
 
 template<typename Value>
-typename Grid<Value>::const_row_strip 
+typename Grid<Value>::const_row_strip
     Grid<Value>::atRow(uint32_t row, uint32_t col, uint32_t length /*=0*/) const
 {
     if (row >= _rowCount || col >= _colCount)
@@ -355,7 +355,7 @@ typename Grid<Value>::const_row_strip
 }
 
 template<typename Value>
-typename Grid<Value>::row_strip 
+typename Grid<Value>::row_strip
     Grid<Value>::atRow(uint32_t row, uint32_t col, uint32_t length /*=0*/)
 {
     if (row >= _rowCount || col >= _colCount)
@@ -375,6 +375,8 @@ void Grid<Value>::fillWithValue(Value value,
     for (uint32_t r = row; r < row + rows; ++r)
     {
         typename Grid<Value>::row_strip rowStrip = atRow(r, col, cols);
+        if (rowStrip == row_strip())
+            continue;
         for (; rowStrip.first < rowStrip.second; ++rowStrip.first)
         {
             *rowStrip.first = value;
@@ -382,7 +384,7 @@ void Grid<Value>::fillWithValue(Value value,
     }
 }
 
-    } /* overview */ 
+    } /* overview */
 } /* cinekine */
 
 #endif

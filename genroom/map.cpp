@@ -35,7 +35,7 @@ Map::Map(const MapBounds& bounds) :
     _tilemaps.reserve(layerCount);
     for (uint32_t i = 0; i < layerCount; ++i)
     {
-        _tilemaps.push_back({ _bounds.xUnits, _bounds.yUnits} );
+        _tilemaps.push_back({ _bounds.yUnits, _bounds.xUnits} );
     }
 }
 
@@ -56,8 +56,8 @@ const Tilemap* Map::tilemapAtZ(int16_t z) const
 {
     if (z < 0 || z >= _bounds.zUnits)
         return nullptr;
-    return &_tilemaps[z];    
+    return &_tilemaps[z];
 }
 
-    } /* overview */ 
+    } /* overview */
 } /* cinekine */

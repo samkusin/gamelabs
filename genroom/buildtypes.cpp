@@ -1,4 +1,4 @@
-/**
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2014 Samir Sinha
@@ -22,44 +22,51 @@
  * THE SOFTWARE.
  */
 
-#ifndef CK_Sample_Graphics_Hpp
-#define CK_Sample_Graphics_Hpp
-
-#include "bitmap.hpp"
-
-#include <memory>
-#include <GLFW/glfw3.h>
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  Graphics
-//
-//  Our use of GL 2 is not to encourage deprecated GL functionality in
-//  production code.  For sample purposes, where we're prototyping concepts
-//  that aren't graphic-rendering specific, GL 2 is a bit easier to set up,
-//  and we're not concerned about optimizing framerates for very simple 2d
-//  graphics
-//
-class Graphics
-{
-    std::unique_ptr<cinekine::SpriteDictionary> _spriteDb;
-    GLuint _glTexture;
-    float _texWidth;
-    float _texHeight;
-
-public:
-    Graphics(const char* spriteDbName);
-    ~Graphics();
-
-    void mapTile(int32_t handle, const char* name);
-
-    void clear();
-
-    void beginTiles();
-    void endTiles();
-
-    void drawTile(int l, int t, int32_t handle);
-};
+#include "buildtypes.hpp"
+#include "maptypes.hpp"
+#include "tiledatabase.hpp"
 
 
-#endif
+namespace cinekine { namespace overview {
+
+    const Box Box::kEmpty = { 0, 0, 0, 0 };
+
+    Box Box::intersection(const Box& box) const
+    {
+        Box result = { 0, 0, 0, 0 };
+        if (outside(box))
+            return result;
+
+        result.x0 = std::max(x0, box.x0);
+        result.x1 = std::min(x1, box.x1);
+        result.y0 = std::max(y0, box.y0);
+        result.y1 = std::min(y1, box.y1);
+
+        return result;
+    }
+
+    Box Box::boundTo(const Box& bounds) const
+    {
+        Box result = { x0, y0, x1, y1 };
+        if (result.x0 < bounds.x0)
+            result.x0 = bounds.x0;
+        if (result.x1 > bounds.x1)
+            result.x1 = bounds.x1;
+        if (result.y0 < bounds.y0)
+            result.y0 = bounds.y0;
+        if (result.y1 > bounds.y1)
+            result.y1 = bounds.y1;
+        return result;
+    }
+
+    Segment::Segment() :
+        box { 0, 0, 0, 0 }
+    {
+    }
+
+    Segment::Segment(const Box& box) :
+        box(box)
+    {
+    }
+
+} /* namespace overview */ } /* namespace cinekine */
