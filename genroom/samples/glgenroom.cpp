@@ -128,14 +128,24 @@ std::array<Tile, 256> _tileToSprites = {
 //  implementation we randomize room placement and submit build instructions
 //  assuming one room = one building region.
 //
-class TheArchitect : public cinekine::overview::Architect
+class TheArchitect
 {
+    enum
+    {
+        kState_BuildRegions,
+        kState_BuildConnections,
+        kState_Done
+    }
+    _state;
+
     struct Room
     {
+        int handle;
         cinekine::overview::Box box;
     };
 
     const cinekine::overview::TileDatabase& _tileTemplates;
+    cinekine::overview::Map& _map;
     std::unique_ptr<cinekine::overview::Builder> _builder;
     std::vector<Room> _rooms;
 
@@ -173,12 +183,13 @@ class TheArchitect : public cinekine::overview::Architect
 public:
     TheArchitect(cinekine::overview::Map& map,
                  const cinekine::overview::TileDatabase& tileTemplates) :
-        _tileTemplates(tileTemplates)
+        _state(kState_BuildRegions),
+        _tileTemplates(tileTemplates),
+        _map(map)
     {
         _builder = std::unique_ptr<cinekine::overview::Builder>(
             new cinekine::overview::Builder(
-                    *this,
-                    map,
+                    _map,
                     _tileTemplates,
                     256)
                 );
@@ -186,15 +197,25 @@ public:
 
     void update()
     {
-        _builder->update();
+        switch (_state)
+        {
+        case kState_BuildRegions:
+            {
+                newRegion({ 0, 0, (int32_t)_map.bounds().xUnits, (int32_t)_map.bounds().yUnits });
+            }
+            break;
+        case kState_BuildConnections:
+            {
+
+            }
+            break;
+        default:
+            break;
+        }
     }
 
-    auto onNewRegionRequest(const cinekine::overview::NewRegionRequest& request) ->
-        cinekine::overview::NewRegionResponse
+    void newRegion(const cinekine::overview::Box& mapBounds)
     {
-        cinekine::overview::NewRegionResponse resp;
-        resp.tileBrush = { kTileCategory_Dungeon, kTileClass_Stone };
-
         //  prioritize large rooms.  If our randomized room selection cannot
         //  fit a 3x3 room minimum, then we (likely) have no room to build
         int32_t boxMinW = 12, boxMinH = 12;
@@ -211,8 +232,8 @@ public:
             //  randomize our box origin - this is the simplest way to
             //  position a box.  basically in this implementation, there's no
             //  design to our room layout
-            int xVariance = request.mapBounds.width() - roomBox.width();
-            int yVariance = request.mapBounds.height() - roomBox.height();
+            int xVariance = mapBounds.width() - roomBox.width();
+            int yVariance = mapBounds.height() - roomBox.height();
             int attempts = 0;
             bool boxAllowed = false;
             int32_t roomX1 = roomBox.x1;
@@ -220,8 +241,8 @@ public:
             const int kMaxAttempts = 16;
             do
             {
-                roomBox.x0 = request.mapBounds.x0;
-                roomBox.y0 = request.mapBounds.y0;
+                roomBox.x0 = mapBounds.x0;
+                roomBox.y0 = mapBounds.y0;
                 if (xVariance > 0)
                     roomBox.x0 += (rand() % (xVariance+1));
                 if (yVariance > 0)
@@ -230,7 +251,7 @@ public:
                 roomBox.y1 = roomY1 + roomBox.y0;
                 ++attempts;
             }
-            while(!(boxAllowed = canBuildRoom(request.mapBounds, roomBox))
+            while(!(boxAllowed = canBuildRoom(mapBounds, roomBox))
                     && attempts < kMaxAttempts);
             if (boxAllowed)
                 break;
@@ -250,26 +271,27 @@ public:
             widthDominant = !widthDominant;
         }
 
+        cinekine::overview::TileBrush tileBrush = { kTileCategory_Dungeon, kTileClass_Stone };
+        std::vector<cinekine::overview::NewRegionInstruction> instructions;
+
         if (roomBox)
         {
-            Room room;
-            room.box = roomBox;
-            _rooms.push_back(room);
-
             auto policy = cinekine::overview::NewRegionInstruction::kRandomize;
-            resp.instructions.emplace_back(policy);
+            instructions.emplace_back(policy);
 
-            auto& instruction = resp.instructions.back();
+            auto& instruction = instructions.back();
             instruction.box = roomBox;
             instruction.terminal = true;
+
+            _rooms.emplace_back();
+            auto& room = _rooms.back();
+            room.handle = _builder->makeRegion(tileBrush, instructions);
+            room.box = roomBox;
         }
         else
         {
-            //  done
-            resp.instructions.emplace_back(cinekine::overview::NewRegionInstruction::kFinalize);
+            _state = kState_BuildConnections;
         }
-
-        return resp;
     }
 
 };

@@ -35,14 +35,11 @@ namespace cinekine { namespace overview {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    Builder::Builder(Architect& architect,
-                Map& map,
+    Builder::Builder(Map& map,
                 const TileDatabase& tileTemplates,
                 uint32_t roomLimit) :
-        _architect(architect),
         _map(map),
-        _tileTemplates(tileTemplates),
-        _building(true)
+        _tileTemplates(tileTemplates)
     {
         _regions.reserve(roomLimit);
         _segments.reserve(roomLimit*8);
@@ -59,23 +56,17 @@ namespace cinekine { namespace overview {
 
     }
 
-    void Builder::update()
+    int Builder::makeRegion(const TileBrush& tileBrush,
+                    const std::vector<NewRegionInstruction>& instructions)
     {
-        if (!_building)
-            return;
-
         //  Send a request for a new room within our entire map bounds
         //  the builder currently is pretty simple - it requests a room and then
         //  paints it.
         //
-        NewRegionRequest newRegionReq;
-        newRegionReq.mapBounds = { 0, 0,
-            (int32_t)_map.bounds().xUnits, (int32_t)_map.bounds().yUnits };
-        auto newRegionResp = _architect.onNewRegionRequest(newRegionReq);
-
+        int regionIndex = -1;
         Region* region = nullptr;
         bool finalize = false;
-        for (auto& cmd : newRegionResp.instructions)
+        for (auto& cmd : instructions)
         {
             Box segBox = cmd.box;
 
@@ -101,20 +92,22 @@ namespace cinekine { namespace overview {
                 {
                     _regions.emplace_back();
                     region = &_regions.back();
+                    regionIndex = (int)_regions.size();
                 }
                 _segments.emplace_back(segBox);
                 auto* segment = &_segments.back();
 
                 region->segments.push_back(segment);
 
-                paintSegmentOntoMap(newRegionResp.tileBrush, *segment);
+                paintSegmentOntoMap(tileBrush, *segment);
             }
             else
             {
-                _building = false;
                 break;
             }
         }
+
+        return regionIndex;
     }
 
     //  the segment is guaranteed to lie entirely within the map's bounds
@@ -122,7 +115,7 @@ namespace cinekine { namespace overview {
     //      - step 1, paint a rect of floor tiles
     //      - step 2, paint a rect of wall tiles
     //
-    void Builder::paintSegmentOntoMap(TileBrush& brush, const Segment& segment)
+    void Builder::paintSegmentOntoMap(const TileBrush& brush, const Segment& segment)
     {
         //  paint floor
         TileHandle floorTileId = _tileTemplates.tileHandleFromDescriptor(
