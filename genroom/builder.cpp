@@ -33,6 +33,15 @@
 
 namespace cinekine { namespace overview {
 
+    Builder::Segment::Segment()
+    {
+    }
+
+    Builder::Segment::Segment(const Box& box) :
+        box(box)
+    {
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     Builder::Builder(Map& map,
@@ -43,6 +52,7 @@ namespace cinekine { namespace overview {
     {
         _regions.reserve(roomLimit);
         _segments.reserve(roomLimit*8);
+        _connections.reserve(roomLimit*8);
 
         //  clear all tilemaps
         const cinekine::overview::MapBounds& bounds = _map.bounds();
@@ -92,7 +102,7 @@ namespace cinekine { namespace overview {
                 {
                     _regions.emplace_back();
                     region = &_regions.back();
-                    regionIndex = (int)_regions.size();
+                    regionIndex = (int)_regions.size()-1;
                 }
                 _segments.emplace_back(segBox);
                 auto* segment = &_segments.back();
@@ -108,6 +118,26 @@ namespace cinekine { namespace overview {
         }
 
         return regionIndex;
+    }
+
+    int Builder::connectRegions(int startRegionHandle, int endRegionHandle)
+    {
+        if (_connections.size() >= _connections.capacity())
+            return -1;
+        if (startRegionHandle >= _regions.size())
+            return -1;
+        if (endRegionHandle >= _regions.size())
+            return -1;
+
+        _connections.emplace_back();
+        Connection& connection = _connections.back();
+        connection.regionA = startRegionHandle;
+        connection.regionB = endRegionHandle;
+
+        //  paint connection onto map
+
+
+        return (int)_connections.size()-1;
     }
 
     //  the segment is guaranteed to lie entirely within the map's bounds
@@ -128,9 +158,9 @@ namespace cinekine { namespace overview {
         tile.wall = 0;
 
         cinekine::overview::Tilemap* tileMap = _map.tilemapAtZ(0);
-        tileMap->fillWithValue(tile, segment.box.y0, segment.box.x0,
-                                 segment.box.y1 - segment.box.y0,
-                                 segment.box.x1 - segment.box.x0);
+        tileMap->fillWithValue(tile, segment.box.p0.y, segment.box.p0.x,
+                                 segment.box.height(),
+                                 segment.box.width());
 
         //  paint walls into this segment
         //  this is a two step process - painting wall tiles, and a second
@@ -139,16 +169,16 @@ namespace cinekine { namespace overview {
         //
         uint32_t yPos;
         const Box& box = segment.box;
-        for (yPos = box.y0; yPos < box.y1; ++yPos)
+        for (yPos = box.p0.y; yPos < box.p1.y; ++yPos)
         {
-            for (uint32_t xPos = box.x0; xPos < box.x1; ++xPos)
+            for (uint32_t xPos = box.p0.x; xPos < box.p1.x; ++xPos)
             {
                 paintTileWalls(*tileMap, yPos, xPos, brush);
             }
         }
-        for (yPos = box.y0; yPos < box.y1; ++yPos)
+        for (yPos = box.p0.y; yPos < box.p1.y; ++yPos)
         {
-            for (uint32_t xPos = box.x0; xPos < box.x1; ++xPos)
+            for (uint32_t xPos = box.p0.x; xPos < box.p1.x; ++xPos)
             {
                 paintTileWallCorners(*tileMap, yPos, xPos, brush);
             }

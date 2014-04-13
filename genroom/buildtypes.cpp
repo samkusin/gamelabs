@@ -29,44 +29,28 @@
 
 namespace cinekine { namespace overview {
 
-    const Box Box::kEmpty = { 0, 0, 0, 0 };
-
     Box Box::intersection(const Box& box) const
     {
-        Box result = { 0, 0, 0, 0 };
+        Box result;
         if (outside(box))
             return result;
-
-        result.x0 = std::max(x0, box.x0);
-        result.x1 = std::min(x1, box.x1);
-        result.y0 = std::max(y0, box.y0);
-        result.y1 = std::min(y1, box.y1);
-
+        result.p0 = Point(std::max(p0.x, box.p0.x), std::max(p0.y, box.p0.y));
+        result.p1 = Point(std::min(p1.x, box.p1.x), std::min(p1.y, box.p1.y));
         return result;
     }
 
     Box Box::boundTo(const Box& bounds) const
     {
-        Box result = { x0, y0, x1, y1 };
-        if (result.x0 < bounds.x0)
-            result.x0 = bounds.x0;
-        if (result.x1 > bounds.x1)
-            result.x1 = bounds.x1;
-        if (result.y0 < bounds.y0)
-            result.y0 = bounds.y0;
-        if (result.y1 > bounds.y1)
-            result.y1 = bounds.y1;
+        Box result = { p0, p1 };
+        if (result.p0.x < bounds.p0.x)
+            result.p0.x = bounds.p0.x;
+        if (result.p1.x > bounds.p1.x)
+            result.p1.x = bounds.p1.x;
+        if (result.p0.y < bounds.p0.y)
+            result.p0.y = bounds.p0.y;
+        if (result.p1.y > bounds.p1.y)
+            result.p1.y = bounds.p1.y;
         return result;
-    }
-
-    Segment::Segment() :
-        box { 0, 0, 0, 0 }
-    {
-    }
-
-    Segment::Segment(const Box& box) :
-        box(box)
-    {
     }
 
 } /* namespace overview */ } /* namespace cinekine */

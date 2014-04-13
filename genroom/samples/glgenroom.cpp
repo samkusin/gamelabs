@@ -173,10 +173,8 @@ class TheArchitect
         int32_t xSize = wMin + (rand() % (wMax-wMin)+1);
         int32_t ySize = hMin + (rand() % (hMax-hMin)+1);
         //  define a random segment within the supplied bounding segment
-        box.x0 = 0;
-        box.y0 = 0;
-        box.x1 = xSize;
-        box.y1 = ySize;
+        box.p0 = glm::ivec2();
+        box.p1 = glm::ivec2(xSize, ySize);
         return box;
     }
 
@@ -201,7 +199,10 @@ public:
         {
         case kState_BuildRegions:
             {
-                newRegion({ 0, 0, (int32_t)_map.bounds().xUnits, (int32_t)_map.bounds().yUnits });
+                newRegion({ cinekine::overview::Box::Point(0, 0),
+                            cinekine::overview::Box::Point(
+                                (int32_t)_map.bounds().xUnits, (int32_t)_map.bounds().yUnits)
+                          });
             }
             break;
         case kState_BuildConnections:
@@ -220,7 +221,7 @@ public:
         //  fit a 3x3 room minimum, then we (likely) have no room to build
         int32_t boxMinW = 12, boxMinH = 12;
         bool widthDominant = true;
-        auto roomBox = cinekine::overview::Box::kEmpty;
+        auto roomBox = cinekine::overview::Box();
 
         while (boxMinW >= 3 && boxMinH >= 3)
         {
@@ -236,19 +237,16 @@ public:
             int yVariance = mapBounds.height() - roomBox.height();
             int attempts = 0;
             bool boxAllowed = false;
-            int32_t roomX1 = roomBox.x1;
-            int32_t roomY1 = roomBox.y1;
+            cinekine::overview::Box::Point roomPt1 = roomBox.p1;
             const int kMaxAttempts = 16;
             do
             {
-                roomBox.x0 = mapBounds.x0;
-                roomBox.y0 = mapBounds.y0;
+                roomBox = mapBounds;
                 if (xVariance > 0)
-                    roomBox.x0 += (rand() % (xVariance+1));
+                    roomBox.p0.x += (rand() % (xVariance+1));
                 if (yVariance > 0)
-                    roomBox.y0 += (rand() % (yVariance+1));
-                roomBox.x1 = roomX1 + roomBox.x0;
-                roomBox.y1 = roomY1 + roomBox.y0;
+                    roomBox.p0.y += (rand() % (yVariance+1));
+                roomBox.p1 = roomPt1 + roomBox.p0;
                 ++attempts;
             }
             while(!(boxAllowed = canBuildRoom(mapBounds, roomBox))
@@ -256,7 +254,7 @@ public:
             if (boxAllowed)
                 break;
 
-            roomBox = cinekine::overview::Box::kEmpty;
+            roomBox.clear();
 
             //  shrink our box size since our (admittedly weak) box test
             //  failed.  then try again.

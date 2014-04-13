@@ -29,6 +29,8 @@
 
 #include <array>
 
+#include "glm/glm.hpp"
+
 namespace cinekine {
     namespace overview {
         class TileDatabase;
@@ -51,23 +53,22 @@ namespace cinekine { namespace overview {
 
     struct Box
     {
-        static const Box kEmpty;
-
-        int32_t x0,y0;      // pt1 (upper,left)
-        int32_t x1,y1;      // pt2 (lower,right)
+        typedef glm::ivec2 Point;
+        Point p0;
+        Point p1;
 
         operator bool() const {
-            return (x1-x0) && (y1-y0);    // is empty?
+            return (p1.x-p0.x) && (p1.y-p0.y);    // is empty?
         }
 
-        int32_t width() const { return (x1 - x0); }
-        int32_t height() const { return (y1 - y0); }
+        int32_t width() const { return (p1.x-p0.x); }
+        int32_t height() const { return (p1.y-p0.y); }
 
         bool inside(const Box& box) const {
-            return (x0 >= box.x0 && x1 <= box.x1 && y0 >= box.y0 && y1 <= box.y1);
+            return (p0.x >= box.p0.x && p1.x <= box.p1.x && p0.y >= box.p0.y && p1.y <= box.p1.y);
         }
         bool outside(const Box& box) const {
-            return (x0 > box.x1 || box.x0 > x1 || y0 > box.y1 || box.y0 > y1);
+            return (p0.x > box.p1.x || box.p0.x > p1.x || p0.y > box.p1.y || box.p0.y > p1.y);
         }
         bool intersects(const Box& box) const {
             return !outside(box);
@@ -77,20 +78,12 @@ namespace cinekine { namespace overview {
         int32_t area() const { return width() * height(); }
         //  returns the box bounded to the specified bounds
         bool operator==(const Box& box) const {
-            return x0 == box.x0 && x1 == box.x1 && y0 == box.y0 && y1 == box.y1;
+            return p0 == box.p0 && p1 == box.p1;
         }
         bool operator!=(const Box& box) const {
-            return x0 != box.x0 || x1 != box.x1 || y0 != box.y0 || y1 != box.y1;
+            return p0 != box.p0 || p1 != box.p1;
         }
-    };
-
-    /// @struct Segment
-    /// @brief  A box connected to other boxes within a larger construct (room)
-    struct Segment
-    {
-        Box box;
-        Segment();
-        Segment(const Box& box);
+        void clear() { p0 = Point(); p1 = Point(); }
     };
 
 

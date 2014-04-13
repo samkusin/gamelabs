@@ -60,11 +60,11 @@ namespace cinekine { namespace overview {
         bool terminal;          ///< Indicates a leaf in the segment tree
         NewRegionInstruction():
             policy(kNone),
-            box(Box::kEmpty),
+            box(),
             terminal(false) {}
         NewRegionInstruction(Policy policy) :
             policy(policy),
-            box(Box::kEmpty),
+            box(),
             terminal(false) {}
     };
 
@@ -77,11 +77,33 @@ namespace cinekine { namespace overview {
         Builder(Map& map,
                 const TileDatabase& tileTemplates,
                 uint32_t roomLimit);
-
+        /// @return The region handle
         int makeRegion(const TileBrush& brush,
                     const std::vector<NewRegionInstruction>& instructions);
+        /// @return The connection handle
+        int connectRegions(int startRegionHandle, int endRegionHandle);
 
     private:
+        struct Segment
+        {
+            Box box;
+            Segment();
+            Segment(const Box& box);
+
+        };
+        struct Region
+        {
+            Box bounds;
+            std::vector<Segment*> segments;
+
+            Region(): bounds() {}
+        };
+        struct Connection
+        {
+            int regionA;
+            int regionB;
+        };
+
         void paintSegmentOntoMap(const TileBrush& brush, const Segment& segment);
         void paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
                     const TileBrush& brush);
@@ -94,16 +116,9 @@ namespace cinekine { namespace overview {
         Map& _map;
         const TileDatabase& _tileTemplates;
 
-        struct Region
-        {
-            Box bounds;
-            std::vector<Segment*> segments;
-
-            Region(): bounds() {}
-        };
-
         std::vector<Region> _regions;
         std::vector<Segment> _segments;
+        std::vector<Connection> _connections;
     };
 } /* namespace overview */ } /* namespace cinekine */
 
