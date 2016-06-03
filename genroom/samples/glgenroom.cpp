@@ -24,8 +24,6 @@
 
 //#include "voronoi/voronoi.hpp"
 
-#include <GLFW/glfw3.h>
-
 #include <ctime>
 #include <cstdio>
 #include <chrono>
@@ -39,7 +37,7 @@
 #include "tiledatabase.hpp"
 
 const int32_t kMapWidth = 56;
-const int32_t kMapHeight = 40;
+const int32_t kMapHeight = 46;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -207,7 +205,11 @@ public:
             break;
         case kState_BuildConnections:
             {
-
+                //  take last two regions and build a connection
+                //
+                uint32_t roomIndexA = _rooms.size() - 2;
+                uint32_t roomIndexB = _rooms.size() - 1;
+                newConnection(roomIndexA, roomIndexB);
             }
             break;
         default:
@@ -219,7 +221,7 @@ public:
     {
         //  prioritize large rooms.  If our randomized room selection cannot
         //  fit a 3x3 room minimum, then we (likely) have no room to build
-        int32_t boxMinW = 12, boxMinH = 12;
+        int32_t boxMinW = 5+(rand() % 7) , boxMinH = 5+(rand() % 7);
         bool widthDominant = true;
         auto roomBox = cinekine::overview::Box();
 
@@ -260,11 +262,11 @@ public:
             //  failed.  then try again.
             if (widthDominant)
             {
-                boxMinH -= 3;
+                boxMinH -= 1;
             }
             else
             {
-                boxMinW -= 3;
+                boxMinW -= 1;
             }
             widthDominant = !widthDominant;
         }
@@ -285,11 +287,27 @@ public:
             auto& room = _rooms.back();
             room.handle = _builder->makeRegion(tileBrush, instructions);
             room.box = roomBox;
+
+            //  connect room pairs
+            if (!(_rooms.size() % 2))
+            {
+                _state = kState_BuildConnections;
+            }
         }
         else
         {
-            _state = kState_BuildConnections;
+            _state = kState_Done;
         }
+    }
+
+    void newConnection(uint32_t roomA, uint32_t roomB)
+    {
+        cinekine::overview::TileBrush tileBrush = { kTileCategory_Dungeon, kTileClass_Stone };
+        std::vector<cinekine::overview::NewRegionInstruction> instructions;
+
+        std::vector<cinekine::overview::MapPoint> points;
+        _builder->connectRegions(tileBrush, _rooms[roomA].handle, _rooms[roomB].handle, points);
+        _state = kState_BuildRegions;
     }
 
 };

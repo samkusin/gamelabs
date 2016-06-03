@@ -51,7 +51,7 @@ namespace cinekine { namespace overview {
         descriptor = makeDescriptor(tileTemplate);
         _tilesByDescriptor.emplace(descriptor, tileHandle);
     }
-    
+
     const TileTemplate& TileDatabase::tile(TileHandle handle) const
     {
         if (handle >= _tiles.size())
@@ -60,7 +60,7 @@ namespace cinekine { namespace overview {
         }
         return _tiles[handle];
     }
-    
+
     TileHandle TileDatabase::tileHandleFromDescriptor(
                                     uint8_t categoryId,
                                     uint8_t classId,
@@ -87,6 +87,6 @@ namespace cinekine { namespace overview {
         descriptor += tile.classId;
         return descriptor;
     }
-        
-   
+
+
 } /* namespace overview */ } /* namespace cinekine */

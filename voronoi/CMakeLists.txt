@@ -22,8 +22,10 @@ set( PROJECT_SOURCES
 #
 find_library( OPENGL_LIBRARY OpenGL )
 find_library( GLFW3_LIBRARY GLFW3 )
+find_path( GLFW3_INCLUDE_DIR GLFW3/glfw3.h )
 
 include_directories( "${GAMELABS_PROJECTS_DIR}" )
+include_directories( "${GLFW3_INCLUDE_DIR}" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
 
 add_executable( simple
@@ -44,7 +46,7 @@ if( OPENGL_LIBRARY AND GLFW3_LIBRARY )
 		${LOCAL_CPP_COMPILE_FLAGS} )
 	set_target_properties( glgraph PROPERTIES LINK_FLAGS
 		${LOCAL_CPP_LINK_FLAGS} )
-	target_link_libraries( glgraph 
+	target_link_libraries( glgraph
 		${OPENGL_LIBRARY} ${GLFW3_LIBRARY} )
 else( )
 	message( WARNING "OpenGL and GLFW3 required to build sample" )

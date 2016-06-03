@@ -42,6 +42,7 @@ namespace cinekine { namespace overview {
     //
     //  Builder types
     //
+    typedef glm::ivec2 MapPoint;
 
     // @struct TileBrush
     // @brief
@@ -53,7 +54,7 @@ namespace cinekine { namespace overview {
 
     struct Box
     {
-        typedef glm::ivec2 Point;
+        typedef MapPoint Point;
         Point p0;
         Point p1;
 
@@ -84,8 +85,19 @@ namespace cinekine { namespace overview {
             return p0 != box.p0 || p1 != box.p1;
         }
         void clear() { p0 = Point(); p1 = Point(); }
+
+        Point center() const {
+            return (p0 + p1)/2;
+        }
     };
 
+
+    inline Box operator+(const Box& box, const Box::Point& off) {
+        Box result;
+        result.p0 = box.p0 + off;
+        result.p1 = box.p1 + off;
+        return result;
+    }
 
 } /* namespace overview */ } /* namespace cinekine */
 

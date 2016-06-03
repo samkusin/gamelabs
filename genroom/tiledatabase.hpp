@@ -39,7 +39,7 @@ namespace cinekine { namespace overview {
     {
     public:
         TileDatabase(size_t tileLimit);
-       
+
         /**
          * Maps a TileTemplate to the handle specified in the template
          * @param handle       The handle to map the template to (from 1 to
@@ -68,7 +68,7 @@ namespace cinekine { namespace overview {
         TileHandle tileHandleFromDescriptor(uint8_t categoryId,
                                     uint8_t classId,
                                     uint16_t roleFlags) const;
-        
+
     private:
         std::vector<TileTemplate> _tiles;
         std::unordered_map<uint32_t, TileHandle> _tilesByDescriptor;

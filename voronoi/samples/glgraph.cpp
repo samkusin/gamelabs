@@ -24,7 +24,7 @@
 
 #include "../voronoi.hpp"
 
-#include <GLFW/glfw3.h>
+#include <glfw3.h>
 
 #include <ctime>
 #include <cstdio>
@@ -42,7 +42,7 @@ cinekine::voronoi::Sites createSites(size_t count, float xBound, float yBound)
 {
 	cinekine::voronoi::Sites sites;
 	sites.reserve(count);
-	
+
 	//	generate
 	while (count--)
 	{
@@ -58,7 +58,7 @@ void rebuild()
 {
     const float xBound = g_width;
     const float yBound = g_height;
-    
+
     printf("********************************\n");
     printf("Voronoi graph (%.2fx%.2f)\n", xBound, yBound);
     printf("********************************\n");
@@ -73,12 +73,12 @@ void rebuild()
         cinekine::voronoi::build(std::move(sites), xBound, yBound);
     std::chrono::high_resolution_clock::time_point end =
         std::chrono::high_resolution_clock::now();
-   
+
     std::chrono::duration<double> span =
         std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
 
     g_voronoiGraph = std::move(graph);
-    printf("- %lu cells generated in %lf seconds\n", g_voronoiGraph.cells().size(), span.count());    
+    printf("- %lu cells generated in %lf seconds\n", g_voronoiGraph.cells().size(), span.count());
 }
 
 void draw()
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     }
 
     glfwMakeContextCurrent(window);
-    
+
     glfwSetFramebufferSizeCallback(window, resizeCb);
     glfwSetWindowRefreshCallback(window, refreshCb);
     glfwSetKeyCallback(window, keyCb);

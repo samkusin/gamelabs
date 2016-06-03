@@ -81,7 +81,9 @@ namespace cinekine { namespace overview {
         int makeRegion(const TileBrush& brush,
                     const std::vector<NewRegionInstruction>& instructions);
         /// @return The connection handle
-        int connectRegions(int startRegionHandle, int endRegionHandle);
+        int connectRegions(const TileBrush& tileBrush,
+                    int startRegionHandle, int endRegionHandle,
+                    const std::vector<MapPoint>& connectPoints);
 
     private:
         struct Segment
@@ -97,6 +99,7 @@ namespace cinekine { namespace overview {
             std::vector<Segment*> segments;
 
             Region(): bounds() {}
+            Segment* closestSegmentToPoint(const MapPoint& pt);
         };
         struct Connection
         {
@@ -104,7 +107,10 @@ namespace cinekine { namespace overview {
             int regionB;
         };
 
-        void paintSegmentOntoMap(const TileBrush& brush, const Segment& segment);
+        void paintConnectionOntoMap(const TileBrush& brush,
+                    const MapPoint& p0,
+                    const MapPoint& p1);
+        void paintBoxOntoMap(const TileBrush& brush, const Box& box);
         void paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
                     const TileBrush& brush);
         void paintTileWallCorners(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,

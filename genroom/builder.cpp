@@ -42,6 +42,24 @@ namespace cinekine { namespace overview {
     {
     }
 
+    auto Builder::Region::closestSegmentToPoint(const MapPoint& pt) -> Segment*
+    {
+        //  pick closest segment to the point
+        Segment* closest = nullptr;
+        int d2Closest = INT32_MAX;
+        for (auto segment: segments)
+        {
+            MapPoint ptDelta = segment->box.center() - pt;
+            int d2 = glm::dot(ptDelta, ptDelta);
+            if (d2 < d2Closest)
+            {
+                closest = segment;
+                d2Closest = d2;
+            }
+        }
+        return closest;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
 
     Builder::Builder(Map& map,
@@ -109,7 +127,7 @@ namespace cinekine { namespace overview {
 
                 region->segments.push_back(segment);
 
-                paintSegmentOntoMap(tileBrush, *segment);
+                paintBoxOntoMap(tileBrush, segment->box);
             }
             else
             {
@@ -120,7 +138,9 @@ namespace cinekine { namespace overview {
         return regionIndex;
     }
 
-    int Builder::connectRegions(int startRegionHandle, int endRegionHandle)
+    int Builder::connectRegions(const TileBrush& tileBrush,
+                        int startRegionHandle, int endRegionHandle,
+                        const std::vector<MapPoint>& connectPoints)
     {
         if (_connections.size() >= _connections.capacity())
             return -1;
@@ -128,16 +148,93 @@ namespace cinekine { namespace overview {
             return -1;
         if (endRegionHandle >= _regions.size())
             return -1;
+        if (startRegionHandle == endRegionHandle)
+            return -1;
+
+        //  Paint connection onto map
+        //  From the closest segment to the end region in the start region to
+        //  the closest segment in the start region from the closest end room
+        //  segment - these points mark our start and end points for the
+        //  region's connection.
+        Region& startRegion = _regions[startRegionHandle];
+        Region& endRegion = _regions[endRegionHandle];
+        Segment* startSegment = startRegion.closestSegmentToPoint(endRegion.bounds.center());
+        if (!startSegment)
+            return -1;      // only if an empty start region
+        Segment* endSegment = endRegion.closestSegmentToPoint(startSegment->box.center());
+        if (!endSegment)
+            return -1;      // only if an empty end retion
+        startSegment = startRegion.closestSegmentToPoint(endSegment->box.center());
+
+        //  paint all connections
+        MapPoint startPoint = startSegment->box.center();
+        MapPoint endPoint = endSegment->box.center();
+        const MapPoint* connectStartPoint = &startPoint;
+
+        for (auto& connectPoint : connectPoints)
+        {
+            const MapPoint* connectEndPoint = &connectPoint;
+            paintConnectionOntoMap(tileBrush, *connectStartPoint, *connectEndPoint);
+            connectStartPoint = connectEndPoint;
+        }
+
+        paintConnectionOntoMap(tileBrush, *connectStartPoint, endPoint);
 
         _connections.emplace_back();
         Connection& connection = _connections.back();
         connection.regionA = startRegionHandle;
         connection.regionB = endRegionHandle;
 
-        //  paint connection onto map
-
-
         return (int)_connections.size()-1;
+    }
+
+    void Builder::paintConnectionOntoMap(const TileBrush& brush,
+                    const MapPoint& p0,
+                    const MapPoint& p1)
+    {
+        //  paint a hallway line using the desired plot method -
+        //  by default, the method is orthogonal (half-rectangle) from p0 to p1
+        const int32_t kHallSize = 3;
+        const Box kHallXBox = {
+            Box::Point(-kHallSize/2,-kHallSize/2),
+            Box::Point((kHallSize+1)/2,(kHallSize+1)/2)
+        };
+        MapPoint delta = p1 - p0;
+        if (delta.x)
+            delta.x /= abs(delta.x);
+        if (delta.y)
+            delta.y /= abs(delta.y);
+        MapPoint ptCurrent = p0;
+        int xy = rand() % 2;
+
+        while (ptCurrent != p1)
+        {
+            paintBoxOntoMap(brush, kHallXBox + ptCurrent);
+            if (xy == 0)            // x dominant
+            {
+                if (ptCurrent.x == p1.x)
+                {
+                    xy = 1;
+                }
+                else
+                {
+                    ptCurrent.x += delta.x;
+                }
+            }
+            else                    // y dominant
+            {
+                if (ptCurrent.y == p1.y)
+                {
+                    xy = 0;
+                }
+                else
+                {
+                    ptCurrent.y += delta.y;
+                }
+            }
+            paintBoxOntoMap(brush, kHallXBox + ptCurrent);
+        }
+
     }
 
     //  the segment is guaranteed to lie entirely within the map's bounds
@@ -145,7 +242,7 @@ namespace cinekine { namespace overview {
     //      - step 1, paint a rect of floor tiles
     //      - step 2, paint a rect of wall tiles
     //
-    void Builder::paintSegmentOntoMap(const TileBrush& brush, const Segment& segment)
+    void Builder::paintBoxOntoMap(const TileBrush& brush, const Box& box)
     {
         //  paint floor
         TileHandle floorTileId = _tileTemplates.tileHandleFromDescriptor(
@@ -158,9 +255,9 @@ namespace cinekine { namespace overview {
         tile.wall = 0;
 
         cinekine::overview::Tilemap* tileMap = _map.tilemapAtZ(0);
-        tileMap->fillWithValue(tile, segment.box.p0.y, segment.box.p0.x,
-                                 segment.box.height(),
-                                 segment.box.width());
+        tileMap->fillWithValue(tile, box.p0.y, box.p0.x,
+                                 box.height(),
+                                 box.width());
 
         //  paint walls into this segment
         //  this is a two step process - painting wall tiles, and a second
@@ -168,7 +265,6 @@ namespace cinekine { namespace overview {
         //      first pass.
         //
         uint32_t yPos;
-        const Box& box = segment.box;
         for (yPos = box.p0.y; yPos < box.p1.y; ++yPos)
         {
             for (uint32_t xPos = box.p0.x; xPos < box.p1.x; ++xPos)
@@ -184,6 +280,8 @@ namespace cinekine { namespace overview {
             }
         }
     }
+
+
 
     void Builder::paintTileWalls(Tilemap& tileMap, uint32_t tileY, uint32_t tileX,
                                 const TileBrush& brush)
